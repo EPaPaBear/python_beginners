@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Basket: List Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .app-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        h1 { margin-top: 0; color: #2c3e50; }
+
+        /* The Focus Area for the Loop */
+        #focus-area {
+            background: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 30px;
+            min-height: 28px;
+            transition: all 0.3s;
+        }
+
+        .focus-active {
+            background: #fef08a !important;
+            color: #854d0e !important;
+            transform: scale(1.05);
+        }
+
+        /* The Basket (Array) UI */
+        #basket {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            min-height: 100px;
+        }
+
+        .slot {
+            background: #fff;
+            border: 3px solid #cbd5e1;
+            border-radius: 10px;
+            width: 100px;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .slot.active-loop {
+            border-color: #eab308;
+            transform: translateY(-10px);
+            box-shadow: 0 10px 15px rgba(234, 179, 8, 0.3);
+            background: #fef9c3;
+        }
+
+        .index-label {
+            background: #cbd5e1;
+            color: #334155;
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding: 5px 0;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+
+        .slot.active-loop .index-label { background: #eab308; color: white; }
+
+        .item-value {
+            padding: 20px 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus { border-color: #3b82f6; }
+
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-add { background: #3b82f6; color: white; }
+        .btn-add:hover { background: #2563eb; }
+        
+        .btn-remove { background: #ef4444; color: white; }
+        .btn-remove:hover { background: #dc2626; }
+        
+        .btn-loop { background: #10b981; color: white; font-size: 1.1rem; padding: 15px 30px; width: 100%; max-width: 400px; margin: 0 auto; display: block;}
+        .btn-loop:hover { background: #059669; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>🍎 The Fruit Basket List</h1>
+    
+    <div id="focus-area">Currently Looking At: Nothing</div>
+
+    <div id="basket">
+        </div>
+
+    <div class="controls">
+        <input type="text" id="fruit-input" placeholder="Type a fruit (e.g. Grape)">
+        <button class="btn-add" onclick="addFruit()">Add Item</button>
+        <button class="btn-remove" onclick="removeFruit()">Remove Last Item</button>
+    </div>
+
+    <button class="btn-loop" id="loop-btn" onclick="exploreBasket()">🔍 Explore Basket (For Loop)</button>
+</div>
+
+<script>
+    // Our starting list
+    let myBasket = ["Apple", "Banana", "Orange"];
+
+    // Function to draw the boxes on the screen
+    function drawBasket() {
+        const basketDiv = document.getElementById('basket');
+        basketDiv.innerHTML = ''; // Clear it out
+
+        if (myBasket.length === 0) {
+            basketDiv.innerHTML = '<p style="color: #64748b; margin-top: 30px;">The basket is empty!</p>';
+            return;
+        }
+
+        // Create a box for every item in our list
+        myBasket.forEach((item, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.id = 'slot-' + index;
+            
+            slot.innerHTML = `
+                <div class="index-label">Index: ${index}</div>
+                <div class="item-value">${item}</div>
+            `;
+            
+            basketDiv.appendChild(slot);
+        });
+    }
+
+    // Add a new item to the end of the list
+    function addFruit() {
+        const inputField = document.getElementById('fruit-input');
+        const newFruit = inputField.value.trim();
+
+        if (newFruit !== "") {
+            myBasket.push(newFruit); // The Python equivalent is .append()
+            drawBasket();
+            inputField.value = ''; // Clear the text box
+            inputField.focus();
+        }
+    }
+
+    // Remove the last item from the list
+    function removeFruit() {
+        if (myBasket.length > 0) {
+            myBasket.pop(); // The exact same command in Python!
+            drawBasket();
+        }
+    }
+
+    // The Animation: Visually step through the list one by one
+    async function exploreBasket() {
+        if (myBasket.length === 0) return;
+
+        // Lock the buttons so they can't mess with the list while looping
+        document.querySelector('.btn-add').disabled = true;
+        document.querySelector('.btn-remove').disabled = true;
+        document.getElementById('loop-btn').disabled = true;
+        
+        const focusArea = document.getElementById('focus-area');
+
+        // This is exactly how a Python FOR loop works
+        for (let i = 0; i < myBasket.length; i++) {
+            // 1. Point to the current box
+            const currentBox = document.getElementById('slot-' + i);
+            currentBox.classList.add('active-loop');
+            
+            // 2. Pull the item out to look at it
+            focusArea.innerText = "Currently Looking At: " + myBasket[i];
+            focusArea.classList.add('focus-active');
+
+            // Wait 1.2 seconds so the human eyes can see it happening
+            await new Promise(resolve => setTimeout(resolve, 1200));
+
+            // 3. Put it back and move to the next one
+            currentBox.classList.remove('active-loop');
+            focusArea.classList.remove('focus-active');
+        }
+
+        // Loop is finished
+        focusArea.innerText = "Done exploring the basket!";
+        
+        // Unlock the buttons
+        document.querySelector('.btn-add').disabled = false;
+        document.querySelector('.btn-remove').disabled = false;
+        document.getElementById('loop-btn').disabled = false;
+    }
+
+    // Draw the initial basket when the page loads
+    drawBasket();
+
+    // Make the "Enter" key trigger the Add button
+    document.getElementById('fruit-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            addFruit();
+        }
+    });
+</script>
+
+</body>
+</html>
