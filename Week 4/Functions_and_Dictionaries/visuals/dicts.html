@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionary Vault: Key-Value Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .app-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 850px;
+            text-align: center;
+        }
+
+        h1 { margin-top: 0; color: #0f172a; }
+        .subtitle { color: #64748b; margin-bottom: 30px; font-size: 1.1rem; }
+
+        /* The Output Screen */
+        #display-screen {
+            background: #1e293b;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            font-family: monospace;
+            margin-bottom: 30px;
+            min-height: 35px;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+        
+        .screen-error { color: #ef4444 !important; }
+
+        /* The Vault (Dictionary UI) */
+        #vault {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .safe {
+            background: #e2e8f0;
+            border: 4px solid #94a3b8;
+            border-radius: 12px;
+            width: 130px;
+            position: relative;
+            transition: all 0.4s ease;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .safe-key {
+            background: #cbd5e1;
+            color: #0f172a;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 10px 0;
+            border-bottom: 2px solid #94a3b8;
+            letter-spacing: 1px;
+        }
+
+        .safe-value {
+            padding: 25px 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3b82f6;
+            background: white;
+            transition: 0.3s;
+        }
+
+        /* Animations */
+        .safe.scanning { transform: translateY(-5px); border-color: #f59e0b; }
+        .safe.scanning .safe-key { background: #f59e0b; color: white; }
+        
+        .safe.unlocked { border-color: #10b981; transform: scale(1.05); box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); }
+        .safe.unlocked .safe-key { background: #10b981; color: white; }
+        .safe.unlocked .safe-value { background: #d1fae5; color: #065f46; }
+
+        /* Controls */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .control-panel { display: flex; flex-direction: column; gap: 10px; }
+        .panel-title { font-weight: bold; color: #475569; text-transform: uppercase; font-size: 0.9rem; }
+
+        input { padding: 12px; font-size: 1rem; border: 2px solid #cbd5e1; border-radius: 6px; outline: none; }
+        input:focus { border-color: #3b82f6; }
+
+        button { padding: 12px; font-size: 1rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; color: white; }
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-lookup { background: #8b5cf6; }
+        .btn-lookup:hover { background: #7c3aed; }
+        
+        .btn-store { background: #3b82f6; }
+        .btn-store:hover { background: #2563eb; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>🗄️ The Secure Vault (Dictionary)</h1>
+    <div class="subtitle">Forget index numbers. Use the exact Key to unlock the Value.</div>
+
+    <div id="display-screen">System Ready. Awaiting Key...</div>
+
+    <div id="vault">
+        </div>
+
+    <div class="controls-grid">
+        <div class="control-panel">
+            <div class="panel-title">1. Access Data (Lookup)</div>
+            <input type="text" id="lookup-key" placeholder="Enter Key (e.g. Alice)">
+            <button class="btn-lookup" onclick="lookupData()">Unlock Safe</button>
+        </div>
+
+        <div class="control-panel">
+            <div class="panel-title">2. Store Data (Add / Update)</div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="store-key" placeholder="New Key" style="width: 50%;">
+                <input type="text" id="store-val" placeholder="Value" style="width: 50%;">
+            </div>
+            <button class="btn-store" onclick="storeData()">Build / Update Safe</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // The Python Dictionary equivalent
+    let securityClearance = {
+        "Alice": "Level 5",
+        "Bob": "Level 2",
+        "Charlie": "Level 1"
+    };
+
+    function drawVault() {
+        const vaultDiv = document.getElementById('vault');
+        vaultDiv.innerHTML = ''; 
+
+        // Loop through the object to build the UI
+        for (const [key, value] of Object.entries(securityClearance)) {
+            const safe = document.createElement('div');
+            safe.className = 'safe';
+            safe.id = 'safe-' + key;
+            
+            safe.innerHTML = `
+                <div class="safe-key">Key: "${key}"</div>
+                <div class="safe-value">🔒</div>
+            `;
+            vaultDiv.appendChild(safe);
+        }
+    }
+
+    async function lookupData() {
+        const keyInput = document.getElementById('lookup-key').value.trim();
+        const screen = document.getElementById('display-screen');
+        
+        if (keyInput === "") return;
+
+        // Lock buttons
+        document.querySelectorAll('button').forEach(b => b.disabled = true);
+        screen.className = '';
+        screen.innerText = `Searching for Key: "${keyInput}"...`;
+
+        // Simulate searching
+        await new Promise(r => setTimeout(r, 600));
+
+        if (securityClearance.hasOwnProperty(keyInput)) {
+            // Found it!
+            const safe = document.getElementById('safe-' + keyInput);
+            safe.classList.add('unlocked');
+            
+            // Swap the lock icon for the actual value
+            safe.querySelector('.safe-value').innerText = securityClearance[keyInput];
+            
+            screen.innerText = `SUCCESS: Value is "${securityClearance[keyInput]}"`;
+            
+            // Reset visually after 3 seconds
+            setTimeout(() => {
+                safe.classList.remove('unlocked');
+                safe.querySelector('.safe-value').innerText = '🔒';
+                screen.innerText = "System Ready. Awaiting Key...";
+            }, 3000);
+
+        } else {
+            // Error!
+            screen.classList.add('screen-error');
+            screen.innerText = `ERROR: KeyError! "${keyInput}" does not exist.`;
+        }
+
+        document.getElementById('lookup-key').value = '';
+        document.querySelectorAll('button').forEach(b => b.disabled = false);
+    }
+
+    function storeData() {
+        const key = document.getElementById('store-key').value.trim();
+        const val = document.getElementById('store-val').value.trim();
+        const screen = document.getElementById('display-screen');
+
+        if (key !== "" && val !== "") {
+            // Python equivalent: securityClearance[key] = val
+            securityClearance[key] = val; 
+            
+            drawVault(); // Redraw the UI
+            
+            screen.className = '';
+            screen.innerText = `STORED: ["${key}"] now holds "${val}"`;
+            
+            document.getElementById('store-key').value = '';
+            document.getElementById('store-val').value = '';
+        }
+    }
+
+    // Initial render
+    drawVault();
+</script>
+
+</body>
+</html>
