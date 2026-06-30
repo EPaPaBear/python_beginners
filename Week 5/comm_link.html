@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Comm-Link Visualizer</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 700px; background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { margin-top: 0; color: #38bdf8; text-align: center; border-bottom: 2px solid #334155; padding-bottom: 15px; }
+
+        .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
+
+        /* The Dictionary Display */
+        .directory-panel { background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #475569; min-height: 200px; }
+        .panel-title { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
+        
+        .contact-card { background: #334155; padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; border-left: 4px solid #38bdf8; }
+        .contact-name { font-weight: bold; color: #f8fafc; }
+        .contact-number { font-family: monospace; color: #a78bfa; }
+        
+        .contact-card.highlight { background: #166534; border-left-color: #22c55e; transform: scale(1.05); }
+
+        /* Controls */
+        .controls-panel { display: flex; flex-direction: column; gap: 20px; }
+        .control-group { background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #475569; }
+        
+        input { width: 100%; padding: 8px; margin-bottom: 10px; background: #1e293b; border: 1px solid #475569; color: white; border-radius: 4px; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #38bdf8; }
+        
+        button { width: 100%; padding: 10px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: 0.2s; color: white; }
+        button:active { transform: scale(0.95); }
+        .btn-add { background: #3b82f6; }
+        .btn-add:hover { background: #2563eb; }
+        .btn-search { background: #8b5cf6; }
+        .btn-search:hover { background: #7c3aed; }
+
+        #system-msg { margin-top: 20px; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        .msg-success { background: #064e3b; color: #34d399; }
+        .msg-error { background: #7f1d1d; color: #f87171; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📱 Secure Comm-Link</h1>
+    
+    <div class="layout">
+        <!-- The Dictionary -->
+        <div class="directory-panel">
+            <div class="panel-title">Active Directory (Dictionary)</div>
+            <div id="contact-list">
+                <!-- Contacts rendered here -->
+            </div>
+        </div>
+
+        <!-- The Actions -->
+        <div class="controls-panel">
+            <!-- Add Contact -->
+            <div class="control-group">
+                <div class="panel-title">1. Add New Contact</div>
+                <input type="text" id="add-name" placeholder="Name (Key)">
+                <input type="text" id="add-num" placeholder="Number (Value)">
+                <button class="btn-add" onclick="addContact()">Save to Directory</button>
+            </div>
+
+            <!-- Search Contact -->
+            <div class="control-group">
+                <div class="panel-title">2. Search Directory</div>
+                <input type="text" id="search-name" placeholder="Target Name (Key)">
+                <button class="btn-search" onclick="searchContact()">Initiate Scan</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="system-msg" style="opacity: 0;">System Ready.</div>
+</div>
+
+<script>
+    // The underlying data structure
+    let directory = {
+        "Alice": "555-0001",
+        "Command": "1-800-HERO"
+    };
+
+    function renderDirectory() {
+        const list = document.getElementById('contact-list');
+        list.innerHTML = '';
+        
+        for (const [name, number] of Object.entries(directory)) {
+            list.innerHTML += `
+                <div class="contact-card" id="card-${name}">
+                    <span class="contact-name">${name}</span>
+                    <span class="contact-number">${number}</span>
+                </div>
+            `;
+        }
+    }
+
+    function showMessage(text, isError = false) {
+        const msg = document.getElementById('system-msg');
+        msg.style.opacity = 1;
+        msg.innerText = text;
+        msg.className = isError ? 'msg-error' : 'msg-success';
+        
+        setTimeout(() => { msg.style.opacity = 0; }, 3000);
+    }
+
+    function addContact() {
+        const name = document.getElementById('add-name').value.trim();
+        const num = document.getElementById('add-num').value.trim();
+        
+        if (name && num) {
+            directory[name] = num; // Add to dictionary
+            renderDirectory();
+            showMessage(`Success: Added ${name} to directory.`);
+            document.getElementById('add-name').value = '';
+            document.getElementById('add-num').value = '';
+        } else {
+            showMessage("Error: Need both Name and Number.", true);
+        }
+    }
+
+    function searchContact() {
+        const name = document.getElementById('search-name').value.trim();
+        
+        if (name) {
+            // Check if key exists
+            if (directory.hasOwnProperty(name)) {
+                // Highlight the card
+                const card = document.getElementById(`card-${name}`);
+                card.classList.add('highlight');
+                showMessage(`Found: ${name}'s number is ${directory[name]}`);
+                
+                setTimeout(() => { card.classList.remove('highlight'); }, 2500);
+            } else {
+                showMessage(`Error: ${name} not found in directory.`, true);
+            }
+        }
+    }
+
+    // Initial render
+    renderDirectory();
+</script>
+
+</body>
+</html>
