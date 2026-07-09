@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arena: Object Interaction</title>
+    <style>
+        body { font-family: 'Press Start 2P', monospace, sans-serif; background: #2f2f2f; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .game-container { width: 100%; max-width: 800px; background: #000; padding: 20px; border-radius: 8px; border: 4px solid #555; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        h1 { text-align: center; color: #facc15; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
+
+        .battlefield { display: flex; justify-content: space-between; align-items: flex-end; padding: 40px 20px; background: linear-gradient(to bottom, #1e3a8a, #064e3b); border-radius: 8px; border: 2px solid #333; margin-bottom: 20px; position: relative; overflow: hidden; }
+
+        /* Fighter Cards */
+        .fighter { width: 45%; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; border: 2px solid #555; transition: 0.2s; position: relative; z-index: 2; }
+        .fighter-name { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #fff; }
+        .hero .fighter-name { color: #3b82f6; }
+        .enemy .fighter-name { color: #ef4444; }
+
+        .health-bar-container { width: 100%; background: #333; height: 20px; border-radius: 10px; overflow: hidden; border: 2px solid #222; margin-bottom: 5px; }
+        .health-bar { height: 100%; background: #22c55e; transition: width 0.3s ease; }
+        .health-text { font-size: 0.8rem; font-family: sans-serif; font-weight: bold; }
+
+        /* Animations */
+        .attack-left { animation: lungeRight 0.3s ease-in-out; }
+        .attack-right { animation: lungeLeft 0.3s ease-in-out; }
+        @keyframes lungeRight { 0% { transform: translateX(0); } 50% { transform: translateX(50px); } 100% { transform: translateX(0); } }
+        @keyframes lungeLeft { 0% { transform: translateX(0); } 50% { transform: translateX(-50px); } 100% { transform: translateX(0); } }
+
+        .shake { animation: shakeAnim 0.3s; filter: brightness(2) contrast(2); }
+        @keyframes shakeAnim { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-10px); } 100% { transform: translateX(0); } }
+
+        /* Logs & Controls */
+        .battle-log { background: #111; padding: 15px; height: 100px; overflow-y: auto; border: 2px solid #333; font-family: sans-serif; font-size: 0.9rem; margin-bottom: 20px; border-radius: 4px; }
+        .log-entry { margin-bottom: 5px; color: #bbb; }
+        .highlight-hero { color: #3b82f6; font-weight: bold; }
+        .highlight-enemy { color: #ef4444; font-weight: bold; }
+        .highlight-dmg { color: #facc15; font-weight: bold; }
+
+        .controls { display: flex; justify-content: center; gap: 20px; }
+        button { padding: 15px 30px; font-size: 1.1rem; font-family: 'Press Start 2P', monospace; background: #b91c1c; color: white; border: 4px solid #7f1d1d; cursor: pointer; border-radius: 8px; text-transform: uppercase; transition: 0.1s; }
+        button:active { transform: translateY(4px); border-bottom-width: 0px; margin-bottom: 4px; }
+        button:disabled { filter: grayscale(1); cursor: not-allowed; }
+        .btn-heal { background: #15803d; border-color: #14532d; }
+
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>⚔️ The Arena</h1>
+    
+    <div class="battlefield">
+        <!-- Player Object -->
+        <div class="fighter hero" id="player-card">
+            <div class="fighter-name">self.name = "Knight"</div>
+            <div class="health-bar-container"><div class="health-bar" id="player-hp-bar" style="width: 100%;"></div></div>
+            <div class="health-text" id="player-hp-text">HP: 100/100</div>
+            <div class="health-text" style="color: #facc15; margin-top:5px;">Attack Power: 25</div>
+        </div>
+
+        <!-- Enemy Object -->
+        <div class="fighter enemy" id="enemy-card">
+            <div class="fighter-name">target.name = "Goblin"</div>
+            <div class="health-bar-container"><div class="health-bar" id="enemy-hp-bar" style="width: 100%; background: #ef4444;"></div></div>
+            <div class="health-text" id="enemy-hp-text">HP: 100/100</div>
+            <div class="health-text" style="color: #facc15; margin-top:5px;">Attack Power: 15</div>
+        </div>
+    </div>
+
+    <div class="battle-log" id="log">
+        <div class="log-entry">SYSTEM: Objects instantiated. Ready for combat.</div>
+    </div>
+
+    <div class="controls">
+        <button id="atk-btn" onclick="heroAttacks()">Knight.attack(Goblin)</button>
+    </div>
+</div>
+
+<script>
+    // The Data Models (Simulating our OOP Classes)
+    let player = { name: "Knight", hp: 100, maxHp: 100, atk: 25 };
+    let enemy = { name: "Goblin", hp: 100, maxHp: 100, atk: 15 };
+
+    function logMessage(msg) {
+        const log = document.getElementById('log');
+        log.innerHTML += `<div class="log-entry">${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function updateUI() {
+        // Player UI
+        document.getElementById('player-hp-text').innerText = `HP: ${player.hp}/${player.maxHp}`;
+        document.getElementById('player-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+        
+        // Enemy UI
+        document.getElementById('enemy-hp-text').innerText = `HP: ${enemy.hp}/${enemy.maxHp}`;
+        document.getElementById('enemy-hp-bar').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
+    }
+
+    async function heroAttacks() {
+        document.getElementById('atk-btn').disabled = true;
+
+        // 1. Hero animation
+        document.getElementById('player-card').classList.add('attack-left');
+        await new Promise(r => setTimeout(r, 150)); // Wait half animation
+        
+        // 2. Enemy takes damage
+        enemy.hp = Math.max(0, enemy.hp - player.atk);
+        document.getElementById('enemy-card').classList.add('shake');
+        logMessage(`> <span class="highlight-hero">${player.name}</span> hits <span class="highlight-enemy">${enemy.name}</span> for <span class="highlight-dmg">${player.atk} damage</span>!`);
+        updateUI();
+
+        // 3. Cleanup animations
+        setTimeout(() => {
+            document.getElementById('player-card').classList.remove('attack-left');
+            document.getElementById('enemy-card').classList.remove('shake');
+        }, 150);
+
+        if (enemy.hp <= 0) {
+            logMessage(`> <span class="highlight-enemy">${enemy.name}</span> has been defeated!`);
+            document.getElementById('enemy-card').style.opacity = '0.3';
+            return; // End combat
+        }
+
+        // 4. Enemy Counters automatically
+        setTimeout(enemyAttacks, 1000);
+    }
+
+    async function enemyAttacks() {
+        // 1. Enemy animation
+        document.getElementById('enemy-card').classList.add('attack-right');
+        await new Promise(r => setTimeout(r, 150));
+        
+        // 2. Player takes damage
+        player.hp = Math.max(0, player.hp - enemy.atk);
+        document.getElementById('player-card').classList.add('shake');
+        logMessage(`> <span class="highlight-enemy">${enemy.name}</span> counter-attacks <span class="highlight-hero">${player.name}</span> for <span class="highlight-dmg">${enemy.atk} damage</span>!`);
+        updateUI();
+
+        // 3. Cleanup animations
+        setTimeout(() => {
+            document.getElementById('enemy-card').classList.remove('attack-right');
+            document.getElementById('player-card').classList.remove('shake');
+            document.getElementById('atk-btn').disabled = false;
+        }, 150);
+
+        if (player.hp <= 0) {
+            logMessage(`> <span class="highlight-hero">${player.name}</span> has fallen. GAME OVER.`);
+            document.getElementById('player-card').style.opacity = '0.3';
+            document.getElementById('atk-btn').disabled = true;
+        }
+    }
+</script>
+
+</body>
+</html>
