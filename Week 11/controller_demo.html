@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Controller & Boundaries</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 900px; }
+        h1 { color: #22c55e; text-align: center; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px; }
+
+        .layout { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+        /* The Game Screen */
+        .screen-panel { background: #1e293b; padding: 20px; border-radius: 12px; border: 4px solid #475569; position: relative; }
+        .canvas-area { width: 100%; height: 400px; background: #000; position: relative; overflow: hidden; border: 2px dashed #334155; }
+        
+        .player-rect { width: 50px; height: 50px; background: #38bdf8; position: absolute; transition: 0s; box-shadow: 0 0 15px #38bdf8; display: flex; align-items: center; justify-content: center; font-weight: bold; color: black; }
+        
+        /* Boundary Indicators */
+        .wall { position: absolute; background: #ef4444; opacity: 0; transition: 0.2s; }
+        .wall-top { top: 0; left: 0; right: 0; height: 10px; }
+        .wall-bottom { bottom: 0; left: 0; right: 0; height: 10px; }
+        .wall-left { top: 0; bottom: 0; left: 0; width: 10px; }
+        .wall-right { top: 0; bottom: 0; right: 0; width: 10px; }
+        .wall.hit { opacity: 1; box-shadow: 0 0 20px #ef4444; }
+
+        /* HUD */
+        .hud { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: monospace; color: #facc15; font-size: 1.2rem; }
+
+        /* The Code / Logic */
+        .code-panel { background: #000; padding: 20px; border-radius: 12px; border: 1px solid #334155; font-family: monospace; font-size: 1.1rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 15px; }
+        
+        .code-block { padding: 10px; background: #1e293b; border-radius: 8px; border-left: 4px solid transparent; transition: 0.2s; }
+        .code-block.active { border-left-color: #38bdf8; background: #0ea5e920; }
+        .code-block.alert { border-left-color: #ef4444; background: #ef444420; }
+        
+        .keyword { color: #c678dd; }
+        
+        /* Controller */
+        .keyboard { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; justify-content: center; margin-top: 20px; }
+        .key { width: 50px; height: 50px; background: #334155; border: 2px solid #475569; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; transition: 0.1s; }
+        .key.active { background: #38bdf8; color: black; border-color: #0ea5e9; transform: translateY(2px); box-shadow: inset 0 3px 5px rgba(0,0,0,0.3); }
+        .empty-key { visibility: hidden; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🕹️ Player Controller & Boundaries</h1>
+    
+    <div class="layout">
+        <!-- The Game Screen -->
+        <div class="screen-panel">
+            <div class="hud">
+                <span id="coord-hud">X: 200 | Y: 150</span>
+                <span>Click canvas & use WASD/Arrows</span>
+            </div>
+            <div class="canvas-area" id="game-canvas" tabindex="0">
+                <div class="wall wall-top" id="w-top"></div>
+                <div class="wall wall-bottom" id="w-bottom"></div>
+                <div class="wall wall-left" id="w-left"></div>
+                <div class="wall wall-right" id="w-right"></div>
+                <div class="player-rect" id="player" style="left: 200px; top: 150px;">P1</div>
+            </div>
+            
+            <div class="keyboard">
+                <div class="empty-key"></div>
+                <div class="key" id="key-up">W</div>
+                <div class="empty-key"></div>
+                <div class="key" id="key-left">A</div>
+                <div class="key" id="key-down">S</div>
+                <div class="key" id="key-right">D</div>
+            </div>
+        </div>
+
+        <!-- The Code logic -->
+        <div class="code-panel">
+            <div style="color: #94a3b8; font-weight: bold; border-bottom: 1px solid #334155; padding-bottom: 5px;">Player Logic Loop</div>
+            
+            <div class="code-block" id="code-keys">
+                keys = pygame.key.get_pressed()
+            </div>
+
+            <div class="code-block" id="code-move">
+                <span class="keyword">if</span> keys[K_RIGHT]: x += speed<br>
+                <span class="keyword">if</span> keys[K_LEFT]:  x -= speed<br>
+                <span class="keyword">if</span> keys[K_UP]:    y -= speed<br>
+                <span class="keyword">if</span> keys[K_DOWN]:  y += speed
+            </div>
+
+            <div style="color: #ef4444; font-weight: bold; margin-top: 10px; border-bottom: 1px solid #334155; padding-bottom: 5px;">Boundary Detection</div>
+            
+            <div class="code-block" id="code-bound-x">
+                <span class="keyword">if</span> x < 0: x = 0<br>
+                <span class="keyword">if</span> x > WIDTH - 50: x = WIDTH - 50
+            </div>
+            
+            <div class="code-block" id="code-bound-y">
+                <span class="keyword">if</span> y < 0: y = 0<br>
+                <span class="keyword">if</span> y > HEIGHT - 50: y = HEIGHT - 50
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const player = document.getElementById('player');
+    
+    // Canvas bounds
+    const WIDTH = canvas.clientWidth;
+    const HEIGHT = canvas.clientHeight;
+    const SIZE = 50;
+    
+    let px = 200;
+    let py = 150;
+    let speed = 5;
+
+    // Track keys
+    const keys = {
+        ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+        w: false, a: false, s: false, d: false
+    };
+
+    // Prevent scrolling when pressing arrows
+    window.addEventListener("keydown", function(e) {
+        if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+            e.preventDefault();
+        }
+    }, false);
+
+    canvas.addEventListener('keydown', (e) => { 
+        if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) {
+            keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = true; 
+        }
+    });
+    canvas.addEventListener('keyup', (e) => { 
+        if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) {
+            keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; 
+        }
+    });
+
+    // Make canvas focusable for keyboard events
+    canvas.focus();
+
+    function update() {
+        let isMoving = false;
+        
+        // 1. MOVEMENT LOGIC
+        if (keys.ArrowUp || keys.w) { py -= speed; document.getElementById('key-up').classList.add('active'); isMoving = true; }
+        else document.getElementById('key-up').classList.remove('active');
+        
+        if (keys.ArrowDown || keys.s) { py += speed; document.getElementById('key-down').classList.add('active'); isMoving = true; }
+        else document.getElementById('key-down').classList.remove('active');
+        
+        if (keys.ArrowLeft || keys.a) { px -= speed; document.getElementById('key-left').classList.add('active'); isMoving = true; }
+        else document.getElementById('key-left').classList.remove('active');
+        
+        if (keys.ArrowRight || keys.d) { px += speed; document.getElementById('key-right').classList.add('active'); isMoving = true; }
+        else document.getElementById('key-right').classList.remove('active');
+
+        if (isMoving) document.getElementById('code-move').classList.add('active');
+        else document.getElementById('code-move').classList.remove('active');
+
+        // 2. BOUNDARY DETECTION
+        let hitX = false;
+        let hitY = false;
+
+        // Left wall
+        if (px < 0) { px = 0; document.getElementById('w-left').classList.add('hit'); hitX = true; }
+        else document.getElementById('w-left').classList.remove('hit');
+        
+        // Right wall
+        if (px > WIDTH - SIZE) { px = WIDTH - SIZE; document.getElementById('w-right').classList.add('hit'); hitX = true; }
+        else document.getElementById('w-right').classList.remove('hit');
+
+        // Top wall
+        if (py < 0) { py = 0; document.getElementById('w-top').classList.add('hit'); hitY = true; }
+        else document.getElementById('w-top').classList.remove('hit');
+        
+        // Bottom wall
+        if (py > HEIGHT - SIZE) { py = HEIGHT - SIZE; document.getElementById('w-bottom').classList.add('hit'); hitY = true; }
+        else document.getElementById('w-bottom').classList.remove('hit');
+
+        // Highlight code blocks
+        if (hitX) document.getElementById('code-bound-x').classList.add('alert');
+        else document.getElementById('code-bound-x').classList.remove('alert');
+        
+        if (hitY) document.getElementById('code-bound-y').classList.add('alert');
+        else document.getElementById('code-bound-y').classList.remove('alert');
+
+        // 3. DRAW NEW FRAME
+        player.style.left = px + 'px';
+        player.style.top = py + 'px';
+        document.getElementById('coord-hud').innerText = `X: ${px} | Y: ${py}`;
+
+        requestAnimationFrame(update);
+    }
+
+    // Start loop
+    update();
+</script>
+
+</body>
+</html>

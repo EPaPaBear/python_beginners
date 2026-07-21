@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pygame Physics: Cartesian Sandbox</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 1000px; }
+        h1 { color: #38bdf8; text-align: center; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-top: 0; margin-bottom: 20px; }
+
+        .layout { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+        /* --- THE CANVAS AREA --- */
+        .canvas-panel { background: #1e293b; padding: 20px; border-radius: 12px; border: 4px solid #475569; }
+        
+        .axis-labels { display: flex; justify-content: space-between; color: #94a3b8; font-family: monospace; font-weight: bold; margin-bottom: 5px; }
+        
+        .grid-container {
+            width: 600px; height: 400px; 
+            background-color: #000;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(255, 255, 255, 0.2) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.2) 2px, transparent 2px);
+            background-size: 50px 50px, 50px 50px, 100px 100px, 100px 100px;
+            position: relative;
+            border-right: 4px dashed #ef4444;
+            border-bottom: 4px dashed #ef4444;
+            border-left: 4px solid #3b82f6;
+            border-top: 4px solid #3b82f6;
+            overflow: visible; /* CRITICAL: Allows box to bleed off edge to prove the point */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .origin-marker { position: absolute; top: -25px; left: -35px; color: #3b82f6; font-family: monospace; font-weight: bold; font-size: 1.2rem;}
+        .width-marker { position: absolute; top: -25px; right: -20px; color: #ef4444; font-family: monospace; font-weight: bold; font-size: 1.2rem;}
+        .height-marker { position: absolute; bottom: -10px; left: -50px; color: #ef4444; font-family: monospace; font-weight: bold; font-size: 1.2rem;}
+
+        /* The Player Object */
+        .player-box {
+            position: absolute;
+            background: rgba(34, 197, 94, 0.8);
+            border: 2px solid #16a34a;
+            top: 0; left: 0; /* Default starting position */
+            transition: all 0.2s ease-out;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-family: monospace; color: white; text-shadow: 1px 1px 2px black;
+            z-index: 10;
+        }
+
+        .player-anchor {
+            position: absolute; top: -4px; left: -4px; width: 8px; height: 8px; background: yellow; border-radius: 50%; border: 1px solid black;
+        }
+
+        /* --- CONTROLS AREA --- */
+        .controls-panel { background: #000; padding: 20px; border-radius: 12px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 20px; }
+        
+        .control-group { background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid #38bdf8; }
+        .group-title { font-weight: bold; color: #94a3b8; text-transform: uppercase; font-size: 0.85rem; margin-bottom: 15px; letter-spacing: 1px;}
+
+        /* Math Buttons */
+        .math-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 10px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; transition: 0.1s; color: white; font-family: monospace; font-size: 1rem; }
+        button:active { transform: scale(0.95); }
+        
+        .btn-y-up { background: #3b82f6; grid-column: span 2; }
+        .btn-x-left { background: #8b5cf6; }
+        .btn-x-right { background: #8b5cf6; }
+        .btn-y-down { background: #3b82f6; grid-column: span 2; }
+        button:hover { filter: brightness(1.2); }
+
+        /* Sliders */
+        .slider-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        input[type="range"] { width: 60%; }
+        .val-display { font-family: monospace; color: #facc15; font-weight: bold; width: 40px; text-align: right;}
+
+        /* Toggles */
+        .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 0.9rem; color: #cbd5e1; }
+        input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+
+        .btn-reset { background: #ef4444; width: 100%; margin-top: auto; padding: 15px; font-size: 1.1rem; }
+        .btn-reset:hover { background: #dc2626; }
+
+        .readout { background: #020617; padding: 10px; border-radius: 4px; font-family: monospace; color: #4af626; text-align: center; margin-top: 10px; border: 1px solid #334155;}
+        .alert-text { color: #ef4444; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📐 Cartesian Plane Physics</h1>
+    
+    <div class="layout">
+        <!-- Canvas -->
+        <div class="canvas-panel">
+            <div class="axis-labels">
+                <span>X=0</span>
+                <span>WIDTH (X=600)</span>
+            </div>
+            
+            <div class="grid-container" id="grid">
+                <!-- <div class="origin-marker">(0,0)</div> -->
+                <div class="width-marker">X</div>
+                <div class="height-marker">Y</div>
+                
+                <div class="player-box" id="player">
+                    <div class="player-anchor" title="Pygame draws from Top-Left!"></div>
+                    <span id="p-label-x">X: 0</span>
+                    <span id="p-label-y">Y: 0</span>
+                </div>
+            </div>
+            
+            <div class="axis-labels" style="margin-top: 5px;">
+                <span>Y=0</span>
+                <span>HEIGHT (Y=400)</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-panel">
+            
+            <!-- Movement -->
+            <div class="control-group">
+                <div class="group-title">1. Apply Displacement (Speed = 50)</div>
+                <div class="math-grid">
+                    <button class="btn-y-up" onclick="movePlayer(0, -50)">player_y -= 50 (UP)</button>
+                    <button class="btn-x-left" onclick="movePlayer(-50, 0)">X -= 50<br>(LEFT)</button>
+                    <button class="btn-x-right" onclick="movePlayer(50, 0)">X += 50<br>(RIGHT)</button>
+                    <button class="btn-y-down" onclick="movePlayer(0, 50)">player_y += 50 (DOWN)</button>
+                </div>
+            </div>
+
+            <!-- Size Configuration -->
+            <div class="control-group" style="border-left-color: #22c55e;">
+                <div class="group-title">2. Object Size (player_size)</div>
+                <div class="slider-row">
+                    <label>Width:</label>
+                    <input type="range" id="size-w" min="50" max="200" step="50" value="100" oninput="updateSize()">
+                    <span class="val-display" id="val-w">100</span>
+                </div>
+                <div class="slider-row">
+                    <label>Height:</label>
+                    <input type="range" id="size-h" min="50" max="200" step="50" value="100" oninput="updateSize()">
+                    <span class="val-display" id="val-h">100</span>
+                </div>
+            </div>
+
+            <!-- Boundary Logic -->
+            <div class="control-group" style="border-left-color: #ef4444;">
+                <div class="group-title">3. Boundary Detection Rules</div>
+                
+                <div class="toggle-row">
+                    <input type="checkbox" id="check-left" checked>
+                    <label>Left Wall (if X < 0: X = 0)</label>
+                </div>
+                <div class="toggle-row">
+                    <input type="checkbox" id="check-top" checked>
+                    <label>Top Wall (if Y < 0: Y = 0)</label>
+                </div>
+                <hr style="border-color: #334155; margin: 10px 0;">
+                
+                <div class="toggle-row" style="color: #facc15; font-weight: bold;">
+                    <input type="radio" name="bound-type" id="bound-naive" value="naive" onchange="runBoundaries()">
+                    <label>Naive (if X > WIDTH: X = WIDTH)</label>
+                </div>
+                <div class="toggle-row" style="color: #22c55e; font-weight: bold;">
+                    <input type="radio" name="bound-type" id="bound-smart" value="smart" checked onchange="runBoundaries()">
+                    <label>Correct (if X > WIDTH - size: X = WIDTH - size)</label>
+                </div>
+            </div>
+
+            <div class="readout" id="status-out">System Ready.</div>
+            
+            <button class="btn-reset" onclick="resetSim()">↺ Reset Simulation</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Constants mapping to Pygame setup
+    const WIDTH = 600;
+    const HEIGHT = 400;
+    
+    // Player State
+    let px = 200;
+    let py = 150;
+    let pw = 100;
+    let ph = 100;
+
+    const playerEl = document.getElementById('player');
+    const statusOut = document.getElementById('status-out');
+
+    function updateDOM() {
+        playerEl.style.left = px + 'px';
+        playerEl.style.top = py + 'px';
+        playerEl.style.width = pw + 'px';
+        playerEl.style.height = ph + 'px';
+        
+        document.getElementById('p-label-x').innerText = `X: ${px}`;
+        document.getElementById('p-label-y').innerText = `Y: ${py}`;
+    }
+
+    function updateSize() {
+        pw = parseInt(document.getElementById('size-w').value);
+        ph = parseInt(document.getElementById('size-h').value);
+        
+        document.getElementById('val-w').innerText = pw;
+        document.getElementById('val-h').innerText = ph;
+        
+        updateDOM();
+        runBoundaries(); // Re-check bounds immediately on size change
+    }
+
+    function movePlayer(dx, dy) {
+        px += dx;
+        py += dy;
+        
+        statusOut.innerHTML = `Math applied. Coordinates updated.`;
+        statusOut.classList.remove('alert-text');
+        
+        // Slight delay before boundary check to allow visual "bleeding" over edge
+        updateDOM(); 
+        setTimeout(runBoundaries, 300);
+    }
+
+    function runBoundaries() {
+        let correctionMade = false;
+        let logMsg = [];
+
+        // 1. Left Wall
+        if (document.getElementById('check-left').checked) {
+            if (px < 0) {
+                px = 0;
+                logMsg.push("Left Boundary hit: X reset to 0.");
+                correctionMade = true;
+            }
+        }
+
+        // 2. Top Wall
+        if (document.getElementById('check-top').checked) {
+            if (py < 0) {
+                py = 0;
+                logMsg.push("Top Boundary hit: Y reset to 0.");
+                correctionMade = true;
+            }
+        }
+
+        // Determine Right/Bottom Logic based on Radio Buttons
+        const isNaive = document.getElementById('bound-naive').checked;
+
+        // 3. Right Wall
+        if (isNaive) {
+            if (px > WIDTH) {
+                px = WIDTH;
+                logMsg.push("Right Boundary (Naive): X reset to 600.");
+                correctionMade = true;
+            }
+        } else {
+            // Correct Logic
+            if (px > WIDTH - pw) {
+                px = WIDTH - pw;
+                logMsg.push(`Right Boundary (Correct): X reset to ${WIDTH - pw}.`);
+                correctionMade = true;
+            }
+        }
+
+        // 4. Bottom Wall
+        if (isNaive) {
+            if (py > HEIGHT) {
+                py = HEIGHT;
+                logMsg.push("Bottom Boundary (Naive): Y reset to 400.");
+                correctionMade = true;
+            }
+        } else {
+            // Correct Logic
+            if (py > HEIGHT - ph) {
+                py = HEIGHT - ph;
+                logMsg.push(`Bottom Boundary (Correct): Y reset to ${HEIGHT - ph}.`);
+                correctionMade = true;
+            }
+        }
+
+        if (correctionMade) {
+            statusOut.innerHTML = logMsg.join("<br>");
+            statusOut.classList.add('alert-text');
+            updateDOM(); // Snap them back visually
+        }
+    }
+
+    function resetSim() {
+        px = 200; py = 150;
+        document.getElementById('size-w').value = 100;
+        document.getElementById('size-h').value = 100;
+        document.getElementById('bound-smart').checked = true;
+        document.getElementById('check-left').checked = true;
+        document.getElementById('check-top').checked = true;
+        
+        updateSize();
+        statusOut.innerHTML = "System Reset.";
+        statusOut.classList.remove('alert-text');
+    }
+
+    // Init
+    updateDOM();
+
+</script>
+</body>
+</html>
