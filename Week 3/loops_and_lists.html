@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loops & Lists · Week 3</title>
+<!--
+  WEEK 3: LOOPS & LISTS (interactive lessons)
+  Open this file in any browser. No install or internet needed. Progress is saved in the browser.
+
+  Loops
+    1 How Many Times?     while loops: counting runs, off-by-one, infinite loops (no update, wrong direction, != skipping past)
+    2 Building Strings    for over a string, the "" accumulator with +=, isupper()/islower(), != filters, reversing, counting
+    3 Secret Codes        ord() and chr(), shifting letters, the past-z bug and the -26 wrap fix, encrypting/decrypting words
+  Lists (Week 3.5)
+    4 Counting from Zero  indexes start at 0, the last index is len - 1, IndexError
+    5 Changing a List     append / pop / remove / assignment, pop() returning the item, for + if over a list
+
+  Every question is generated with Python's real behaviour (including the exact error messages).
+  Generators: genWhile, genBuild, genCipher, genIndex, genChange. Each lesson's question mix is in LESSONS[].plan.
+-->
+<style>
+:root{
+  --bg:#ffffff; --soft:#f5f6f8; --line:#e2e5e9; --line2:#c9cfd6; --ink:#16181d; --muted:#5d6570; --faint:#9aa1aa;
+  --blue:#2f6bff; --blue-soft:#ebf1ff; --blue-ink:#1f4fc4;
+  --green:#1f9d55; --green-soft:#e8f6ee; --green-ink:#14693a;
+  --red:#e0484e; --red-soft:#fdeeee; --red-ink:#a3262c;
+  --amber:#d48a12; --amber-soft:#fff5e0;
+  --mono:"Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+  --sans:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",sans-serif;
+}
+/* students must SEE the two characters in != and += and >=, so no font ligatures anywhere */
+*{box-sizing:border-box;font-variant-ligatures:none !important;font-feature-settings:"liga" 0,"calt" 0 !important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+button,input{font-family:inherit;color:inherit}
+code{font-family:var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.88em;white-space:nowrap}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+h2{font-size:28px;line-height:1.2;letter-spacing:-.015em;margin:0 0 10px}
+
+/* ---------- course page ---------- */
+.page{max-width:720px;margin:0 auto;padding:52px 22px 80px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.page h1{font-size:44px;line-height:1.05;margin:8px 0 12px;letter-spacing:-.025em}
+.lede{color:var(--muted);font-size:19px;margin:0 0 10px;max-width:560px}
+.lesson{display:flex;gap:18px;align-items:center;padding:16px 18px;border:2px solid var(--line);border-bottom-width:4px;border-radius:18px;
+  background:#fff;cursor:pointer;margin-bottom:12px;transition:border-color .12s}
+.lesson:hover{border-color:var(--line2)}
+.lesson.next{border-color:var(--blue)}
+.node{width:58px;height:58px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue);position:relative}
+.lesson.done .node{background:var(--green-soft);color:var(--green)}
+.badge{position:absolute;right:-3px;bottom:-3px;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;border:3px solid #fff}
+.lnum{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.lesson h3{margin:0;font-size:19px;letter-spacing:-.01em}
+.lesson p{margin:2px 0 0;color:var(--muted);font-size:15px}
+.lesson .meta{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap;padding-left:8px}
+.startpill{background:var(--blue);color:#fff;font-weight:700;border-radius:99px;padding:6px 14px}
+.section-title{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:40px 0 12px}
+details.ref{border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff}
+details.ref summary{cursor:pointer;font-weight:650}
+details.ref[open] summary{margin-bottom:10px}
+.foot-links{margin-top:28px;font-size:14px;color:var(--faint)}
+.linkbtn{background:none;border:0;padding:0;color:var(--muted);cursor:pointer;text-decoration:underline;font-size:14px}
+
+/* ---------- lesson shell ---------- */
+.topbar{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.96);backdrop-filter:blur(4px)}
+.topbar .in{display:flex;align-items:center;gap:16px;padding:14px 20px;max-width:760px;margin:0 auto}
+.iconbtn{background:none;border:0;color:var(--muted);cursor:pointer;padding:6px;border-radius:10px;display:grid;place-items:center}
+.iconbtn:hover{background:var(--soft);color:var(--ink)}
+.progress{flex:1;height:12px;background:var(--soft);border-radius:99px;overflow:hidden}
+.progress>div{height:100%;background:var(--green);border-radius:99px;transition:width .4s ease}
+.topstat{font-size:15px;font-weight:650;color:var(--muted);white-space:nowrap;min-width:3.5em;text-align:right}
+.stage{max-width:680px;margin:0 auto;padding:18px 22px 200px}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
+.prompt{font-size:23px;font-weight:650;line-height:1.35;margin:0 0 18px;letter-spacing:-.012em}
+.center{text-align:center}
+
+/* ---------- code ---------- */
+.code{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:12px 0;font:16px/1.75 var(--mono);overflow-x:auto;margin:0 0 20px}
+.ln{display:flex;align-items:center;white-space:pre;padding-right:16px;width:max-content;min-width:100%;border-left:3px solid transparent}
+.ln .g{width:2.7em;text-align:right;padding-right:1.1em;color:#b6bcc4;flex:none;user-select:none}
+.ln.q{background:var(--blue-soft);border-left-color:var(--blue)}
+.k{color:#a626a4} .s{color:#3f8f3e} .n{color:#b46200} .o{color:#0179b0;font-weight:700} .fn{color:#3d6fe0} .cm{color:#9ba0a8;font-style:italic}
+
+/* ---------- answers ---------- */
+.choices{display:grid;gap:10px}
+.choices.row4{grid-template-columns:repeat(4,1fr)}
+.choices.row5{grid-template-columns:repeat(5,1fr)}
+.choice{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-bottom-width:4px;
+  border-radius:14px;padding:14px 16px;font-weight:650;font-size:18px;cursor:pointer;transition:border-color .12s,background .12s}
+.choice.center{justify-content:center;text-align:center}
+.choice:hover{border-color:var(--line2)}
+.choice.sel{border-color:var(--blue);background:var(--blue-soft);color:var(--blue-ink)}
+.choice.right{border-color:var(--green);background:var(--green-soft);color:var(--green-ink)}
+.choice.wrong{border-color:var(--red);background:var(--red-soft);color:var(--red-ink)}
+.choice.locked{pointer-events:none}
+.choice .sub{font-weight:500;font-size:14px;color:var(--muted)}
+.txt{width:100%;font:600 22px var(--mono);padding:14px 18px;border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;outline:none;background:#fff}
+.txt:focus{border-color:var(--blue)}
+.txt.right{border-color:var(--green);background:var(--green-soft);color:var(--green-ink)}
+.txt.wrong{border-color:var(--red);background:var(--red-soft);color:var(--red-ink)}
+.hint{font-size:14px;color:var(--muted);margin-top:8px}
+
+/* alphabet strip */
+.strip{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;padding:2px 0 6px;margin:0 0 12px}
+.sc{min-width:0;border:2px solid var(--line);border-bottom-width:4px;border-radius:10px;background:#fff;text-align:center;padding:5px 0 3px;user-select:none;transition:background .2s,border-color .2s}
+.sc b{display:block;font:700 18px var(--mono)}
+.sc span{display:block;font:600 10.5px var(--mono);color:var(--faint);min-height:15px}
+.sc.sym{background:var(--amber-soft)}
+.sc.tap{cursor:pointer} .sc.tap:hover{border-color:var(--line2)}
+.sc.sel{border-color:var(--blue);background:var(--blue-soft)}
+.sc.path{background:#eef3ff}
+.sc.over{background:#ffe9bf;border-color:var(--amber)}
+.sc.from{border-color:var(--blue);background:var(--blue-soft)}
+.sc.right,.sc.to{border-color:var(--green);background:var(--green-soft)}
+.sc.wrong{border-color:var(--red);background:var(--red-soft)}
+.sc.locked{pointer-events:none}
+
+/* list boxes */
+.lrow{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.cell{border:2px solid var(--line);border-bottom-width:4px;border-radius:12px;background:#fff;min-width:84px;text-align:center;overflow:hidden;transition:border-color .2s,background .2s}
+.cell .v{padding:12px 14px;font-weight:650;font-size:16px}
+.cell .idx{border-top:1px solid var(--line);background:var(--soft);font:700 13px var(--mono);color:var(--muted);min-height:24px;line-height:22px}
+.cell.tap{cursor:pointer} .cell.tap:hover{border-color:var(--line2)}
+.cell.sel{border-color:var(--blue);background:var(--blue-soft)}
+.cell.right{border-color:var(--green);background:var(--green-soft)}
+.cell.wrong{border-color:var(--red);background:var(--red-soft)}
+.cell.ghost{border-style:dashed;background:transparent;color:var(--faint);animation:rise .25s ease}
+.cell.locked{pointer-events:none}
+.idx.pop{animation:popin .3s cubic-bezier(.2,1.5,.5,1) both;color:var(--blue-ink)}
+.mini{display:inline-flex;gap:5px;flex-wrap:wrap;align-items:center}
+.mb{border:1.5px solid var(--line2);border-radius:7px;padding:1px 8px;font-size:14px;font-weight:600;background:#fff;color:var(--ink)}
+.mb.new{border-color:var(--green);background:var(--green-soft);color:var(--green-ink)}
+.mb.changed{border-color:var(--amber);background:var(--amber-soft)}
+.mini.empty{font:600 14px var(--mono);color:var(--muted)}
+
+/* ---------- explanation ---------- */
+.explain{margin-top:22px;border:1px solid var(--line);border-radius:16px;padding:18px 18px 8px;background:#fff;animation:rise .25s ease}
+.explain .hd{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.explain p{margin:0 0 12px}
+.bool{display:inline-block;padding:0 9px;border-radius:8px;font:700 14px/1.7 var(--mono)}
+.bool.True{background:#cdeedb;color:var(--green-ink)} .bool.False{background:#fad6d8;color:var(--red-ink)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;margin:0 0 14px}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--soft);font-weight:700}
+table.t td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t tr:last-child td{border-bottom:0}
+table.t tr.in{animation:rise .25s ease both}
+td.mono{font-family:var(--mono);font-size:14px;white-space:nowrap}
+.tiles{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.tile{width:32px;height:40px;border:2px solid var(--line);border-radius:8px;display:grid;place-items:center;font:600 17px var(--mono);background:#fff;transition:all .15s}
+.tile.cur{border-color:var(--blue);background:var(--blue-soft);transform:translateY(-3px)}
+.tile.kept{border-color:var(--green);background:var(--green-soft);color:var(--green-ink)}
+.tile.skip{opacity:.32}
+.accrow{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.acc{display:inline-block;min-width:64px;border:2px solid var(--line2);border-radius:10px;padding:4px 12px;font:700 20px var(--mono);background:#fff;white-space:pre}
+.calc{display:grid;gap:6px;margin-bottom:12px;font:600 15px var(--mono)}
+.calc div{animation:rise .25s ease both}
+.steps{display:grid;gap:10px;margin-bottom:12px}
+.step{display:flex;gap:14px;align-items:center;flex-wrap:wrap;animation:rise .25s ease both;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:0}
+.step .sop{min-width:200px;font:600 14px var(--mono);white-space:nowrap}
+.removed{font-size:13px;font-weight:650;color:var(--red-ink);background:var(--red-soft);border-radius:7px;padding:1px 8px}
+.err{font:600 14px var(--mono);color:var(--red-ink)}
+
+/* ---------- footer ---------- */
+.footer{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:2px solid var(--line);transition:background .2s,border-color .2s}
+.footer.hidden{display:none}
+.footer .in{max-width:680px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:16px;min-height:84px}
+.footer.good{background:var(--green-soft);border-color:#b9e3c9}
+.footer.bad{background:var(--red-soft);border-color:#f3c4c6}
+.fb{display:flex;gap:12px;align-items:center;flex:1;min-width:0}
+.fb-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none;animation:popin .3s cubic-bezier(.2,1.5,.5,1)}
+.good .fb-icon{background:var(--green)} .bad .fb-icon{background:var(--red)}
+.fb-title{font-weight:750;font-size:20px}
+.good .fb-title{color:var(--green-ink)} .bad .fb-title{color:var(--red-ink)}
+.fb-text{font-size:15px;color:var(--muted)}
+.actions{display:flex;gap:10px;align-items:center;flex:none}
+.btn-primary{background:var(--ink);color:#fff;border:0;border-radius:14px;padding:14px 30px;font-weight:750;font-size:17px;cursor:pointer;box-shadow:0 4px 0 #000}
+.btn-primary:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.btn-primary:disabled{background:#d7dbe0;box-shadow:0 4px 0 #c4c9cf;cursor:default;transform:none}
+.good .btn-primary{background:var(--green);box-shadow:0 4px 0 #157a41}
+.bad .btn-primary{background:var(--red);box-shadow:0 4px 0 #b3333a}
+.btn-ghost{background:none;border:2px solid var(--line2);border-radius:14px;padding:12px 20px;font-weight:700;font-size:16px;cursor:pointer;color:var(--muted)}
+.btn-ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+/* ---------- intro + complete ---------- */
+.introcard{text-align:center;padding-top:28px}
+.bigicon{width:96px;height:96px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;margin:0 auto 22px}
+.bigicon svg{width:48px;height:48px}
+.introcard p{font-size:18px;color:var(--muted);max-width:520px;margin:0 auto 14px}
+.introcard .code{text-align:left;max-width:440px;margin:22px auto 0}
+.bigcheck{width:96px;height:96px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;margin:28px auto 22px;animation:popin .4s cubic-bezier(.2,1.5,.5,1)}
+.stats{display:flex;justify-content:center;gap:12px;margin:24px 0 30px;flex-wrap:wrap}
+.stat{border:2px solid var(--line);border-radius:16px;padding:12px 20px;min-width:120px}
+.stat b{display:block;font-size:28px;letter-spacing:-.02em}
+.stat span{font-size:13px;color:var(--muted)}
+
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes popin{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+@media (max-width:560px){
+  .page{padding:32px 16px 60px} .page h1{font-size:36px}
+  .stage{padding:12px 16px 230px}
+  .prompt{font-size:20px}
+  .code{font-size:14px}
+  .choice{font-size:16px;padding:12px 10px}
+  .choices.row5{grid-template-columns:repeat(3,1fr)}
+  .choices.row4{grid-template-columns:repeat(2,1fr)}
+  .lesson .meta{display:none}
+  .footer .in{flex-wrap:wrap;padding:14px 16px}
+  .actions{width:100%} .actions .btn-primary{flex:1}
+  .fb-title{font-size:18px}
+  .step .sop{min-width:0}
+  .cell{min-width:70px} .cell .v{padding:10px}
+  .strip{gap:3px} .sc{border-radius:7px;border-width:1.5px;border-bottom-width:3px} .sc b{font-size:15px} .sc span{font-size:8px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="footer hidden" id="foot"></div>
+
+<script>
+/* =====================================================================
+   HELPERS
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const app = $('#app'), foot = $('#foot');
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const uniq = a => [...new Set(a)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pyBool = b => b ? 'True' : 'False';
+const boolChip = b => `<span class="bool ${pyBool(b)}">${pyBool(b)}</span>`;
+const ORD = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
+const pySrcList = items => '[' + items.map(x => `"${x}"`).join(', ') + ']';      // how it's written in code
+const pyRepr = items => '[' + items.map(x => `'${x}'`).join(', ') + ']';          // how print() shows it
+let screen = 'course';
+let animTok = 0;
+
+const ICON = {
+  close: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  check: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  checkSm: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  checkBig: '<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+  loop: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M25 12a10 10 0 1 0 1 8"/><path d="M26 5v7h-7"/></svg>',
+  build: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="10" width="7.5" height="12" rx="2"/><rect x="12.3" y="10" width="7.5" height="12" rx="2"/><rect x="21.6" y="10" width="7.5" height="12" rx="2" stroke-dasharray="3 2.4"/></svg>',
+  cipher: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="16" r="5.5"/><path d="M15.5 16H28M23.5 16v5M28 16v4"/></svg>',
+  index: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="8" width="8" height="11" rx="2"/><rect x="12" y="8" width="8" height="11" rx="2"/><rect x="21" y="8" width="8" height="11" rx="2"/><circle cx="7" cy="25" r="2" fill="currentColor" stroke="none"/></svg>',
+  change: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 8h15M5 15h15M5 22h9"/><path d="M24 18v9M19.5 22.5h9"/></svg>',
+};
+
+// tiny Python syntax highlighter (light theme)
+function hl(src) {
+  const re = /(#.*$)|("[^"]*")|\b(if|elif|else|and|or|not|while|for|in|True|False)\b|\b(print|input|int|str|len|ord|chr)\b|\.(append|pop|remove|isupper|islower)\b|(-?\b\d+\b)|(\+=|-=|==|!=|>=|<=|>|<|\+|-)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    if (m[5]) out += `.<span class="fn">${m[5]}</span>`;
+    else {
+      const cls = m[1] ? 'cm' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 'fn' : m[6] ? 'n' : 'o';
+      out += `<span class="${cls}">${esc(m[0])}</span>`;
+    }
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+const cd = s => `<code>${hl(s)}</code>`;
+function codeBlock(lines, { id = 'L', q = -1 } = {}) {
+  return `<div class="code">${lines.map((t, i) =>
+    `<div class="ln${i === q ? ' q' : ''}" id="${id}${i}"><span class="g">${i + 1}</span><span class="tx">${hl(t) || ' '}</span></div>`).join('')}</div>`;
+}
+function cmp(a, op, b) {
+  switch (op) {
+    case '==': return a === b; case '!=': return a !== b;
+    case '>': return a > b; case '<': return a < b; case '>=': return a >= b; case '<=': return a <= b;
+  }
+}
+
+/* ---------- save, sound ---------- */
+const SAVE_KEY = 'week3.loops_lists.v1';
+let save;
+try { save = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { save = null; }
+if (!save) save = { done: {}, best: {}, muted: false };
+const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+let actx;
+function tone(freq, dur = .12, vol = .05, type = 'sine', when = 0) {
+  if (save.muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + .02);
+  } catch (e) {}
+}
+const sfxGood = () => { tone(784, .14); tone(1175, .22, .04, 'sine', .08); };
+const sfxBad = () => tone(196, .22, .05, 'triangle');
+const sfxWin = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, .045, 'sine', i * .09));
+const sfxTick = () => tone(880, .04, .02);
+
+/* ---------- shell ---------- */
+function setFoot(mode, o = {}) {
+  foot.className = 'footer ' + mode;
+  const icon = mode === 'good' ? ICON.check : mode === 'bad' ? ICON.x : '';
+  foot.innerHTML = `<div class="in">
+    <div class="fb">${icon ? `<div class="fb-icon">${icon}</div>` : ''}${o.title ? `<div><div class="fb-title">${o.title}</div>${o.text ? `<div class="fb-text">${o.text}</div>` : ''}</div>` : ''}</div>
+    <div class="actions">${o.alt ? `<button class="btn-ghost" id="footAlt">${o.alt}</button>` : ''}${o.btn ? `<button class="btn-primary" id="footBtn"${o.disabled ? ' disabled' : ''}>${o.btn}</button>` : ''}</div>
+  </div>`;
+  if (o.btn) $('#footBtn').onclick = o.onClick;
+  if (o.alt) $('#footAlt').onclick = o.onAlt;
+}
+const hideFoot = () => { foot.className = 'footer hidden'; foot.innerHTML = ''; };
+const enableFoot = on => { const b = $('#footBtn'); if (b) b.disabled = !on; };
+function topbar(pct, right = '') {
+  return `<div class="topbar"><div class="in">
+    <button class="iconbtn" onclick="course()" aria-label="Close lesson">${ICON.close}</button>
+    <div class="progress"><div style="width:${pct}%"></div></div>
+    <div class="topstat">${right}</div></div></div>`;
+}
+function leave() { animTok++; window.scrollTo(0, 0); }
+
+/* =====================================================================
+   WIDGETS
+   ===================================================================== */
+const STRIP = [...'abcdefghijklmnopqrstuvwxyz{|}~'];
+function stripHTML(tap) {
+  return `<div class="strip" id="strip">${STRIP.map(c => `<div class="sc${tap ? ' tap' : ''}${c > 'z' ? ' sym' : ''}" ${tap ? `data-id="${esc(c)}" onclick="selectQ(this)"` : ''} data-c="${esc(c)}"><b>${esc(c)}</b><span>${c === 'a' || c === 'z' ? c.charCodeAt(0) : ''}</span></div>`).join('')}</div>`;
+}
+const stripTile = c => $$('#strip .sc').find(t => t.dataset.c === c);
+function stripReveal(from, to, over) {
+  $$('#strip .sc').forEach(t => { t.querySelector('span').textContent = t.dataset.c.charCodeAt(0); });
+  if (from) {
+    const a = from.charCodeAt(0), b = (over || to).charCodeAt(0), [lo, hi] = a < b ? [a, b] : [b, a];
+    $$('#strip .sc').forEach(t => { const c = t.dataset.c.charCodeAt(0); if (c > lo && c < hi) t.classList.add('path'); });
+    stripTile(from)?.classList.add('from');
+  }
+  if (over) stripTile(over)?.classList.add('over');
+  stripTile(to)?.classList.add('to');
+}
+function boxesHTML(items, tap) {
+  return `<div class="lrow" id="boxes">${items.map((it, i) => `<div class="cell${tap ? ' tap' : ''}" ${tap ? `data-id="${i}" onclick="selectQ(this)"` : ''}><div class="v">${esc(it)}</div><div class="idx"></div></div>`).join('')}</div>`;
+}
+function revealIndexes(extraGhost) {
+  $$('#boxes .cell').forEach((c, i) => { const ix = c.querySelector('.idx'); ix.textContent = i; ix.classList.add('pop'); ix.style.animationDelay = (i * 90) + 'ms'; });
+  if (extraGhost != null) $('#boxes').insertAdjacentHTML('beforeend', `<div class="cell ghost"><div class="v">nothing here</div><div class="idx">${extraGhost}</div></div>`);
+}
+const mini = (items, hi = {}) => items.length
+  ? `<span class="mini">${items.map((x, i) => `<span class="mb${hi[i] ? ' ' + hi[i] : ''}">${esc(x)}</span>`).join('')}</span>`
+  : '<span class="mini empty">[ ] empty</span>';
+const numOpts = ans => {
+  const lo = Math.max(0, ans - pick([0, 1, 2, 3]));
+  return [lo, lo + 1, lo + 2, lo + 3].map(n => ({ id: String(n), html: `<span class="mono">${n}</span>` }));
+};
+
+/* =====================================================================
+   LESSON 1: HOW MANY TIMES? (while)
+   ===================================================================== */
+const WV = ['attempts', 'n', 'lives', 'fuel', 'countdown'];
+function simWhile(start, op, end, upd, step) {
+  let x = start, runs = 0; const rows = [];
+  while (true) {
+    const c = cmp(x, op, end); rows.push({ x, c });
+    if (!c) break;
+    if (runs >= 50) return { rows, runs, forever: true };
+    runs++; if (upd === '-=') x -= step; else if (upd === '+=') x += step;
+  }
+  return { rows, runs, forever: false, final: x };
+}
+function genWhile(kind) {
+  let v = pick(WV), start, op, end, upd = '-=', step = 1;
+  if (kind === 'down') { start = pick([3, 4, 5, 6]); op = pick(['>', '>=', '!=']); end = pick([0, 0, 1]); step = op === '!=' ? 1 : pick([1, 1, 2]); }
+  if (kind === 'up') { v = pick(['i', 'count', 'level']); start = pick([0, 1]); op = pick(['<', '<=', '!=']); end = pick([3, 4, 5]); upd = '+='; step = op === '!=' ? 1 : pick([1, 1, 2]); }
+  if (kind === 'noupdate') { start = pick([3, 5]); op = '>'; end = 0; upd = null; }
+  if (kind === 'wrongway') { start = pick([3, 4, 5]); op = '>'; end = 0; upd = '+='; }
+  if (kind === 'skip') { start = pick([5, 7]); op = '!='; end = 0; step = 2; }
+  if (kind === 'never') { start = pick([0, 0, 2]); op = start ? '<' : '>'; end = start ? 1 : 0; upd = start ? '+=' : '-='; }
+  const sim = simWhile(start, op, end, upd, step);
+  const code = [`${v} = ${start}`, `while ${v} ${op} ${end}:`, `    print(${v})`];
+  if (upd) code.push(`    ${v} ${upd} ${step}`);
+  const askFinal = !sim.forever && sim.runs > 1 && Math.random() < 0.4;
+
+  let expl;
+  if (sim.forever) {
+    expl = kind === 'noupdate' ? `Nothing inside the loop changes <code>${v}</code>, so the condition is True forever. That's an infinite loop. In a terminal, <b>Ctrl + C</b> stops it.`
+      : kind === 'wrongway' ? `<code>${v}</code> goes <b>up</b>, but the loop only stops once it drops to 0. It never will, so the loop runs forever.`
+      : `<code>${v}</code> goes 1, then -1. It steps right over 0, and <code>!=</code> only stops on exactly 0, so the loop never ends. <code>&gt;</code> would have been safer.`;
+  } else if (sim.runs === 0) expl = `The condition is already False on the very first check, so the body never runs.`;
+  else if (askFinal) expl = `The loop stops the first time the condition is False. That happens when <code>${v}</code> is ${sim.final}.`;
+  else expl = `The body ran ${sim.runs} time${sim.runs === 1 ? '' : 's'}. Notice the condition was checked ${sim.runs + 1} times: the last check comes out False and ends the loop.`;
+
+  const reveal = async el => {
+    const shown = sim.forever ? sim.rows.slice(0, 5) : sim.rows;
+    el.innerHTML = `<div class="explain"><div class="hd">Trace</div><div class="tablewrap"><table class="t">
+      <tr><th>Check</th><th>${v}</th><th>Condition</th><th>Then</th></tr>
+      ${shown.map((r, i) => `<tr class="in" style="animation-delay:${i * 110}ms"><td>${i + 1}</td><td class="mono">${r.x}</td><td class="mono">${hl(`${r.x} ${op} ${end}`)} → ${boolChip(r.c)}</td><td>${r.c ? 'body runs' : '<b>loop ends</b>'}</td></tr>`).join('')}
+      ${sim.forever ? `<tr class="in" style="animation-delay:${shown.length * 110}ms"><td>…</td><td class="mono">…</td><td>${boolChip(true)} every time</td><td><b>never ends</b></td></tr>` : ''}
+    </table></div><p>${expl}</p></div>`;
+  };
+  if (askFinal) return { kicker: 'while loop', code, prompt: `What is <code>${v}</code> once the loop has finished?`, type: 'choice', grid: 'row4', center: true,
+    options: (lo => [lo, lo + 1, lo + 2, lo + 3])(sim.final - pick([0, 1, 2, 3])).map(n => ({ id: String(n), html: `<span class="mono">${n}</span>` })), answer: String(sim.final), reveal };
+  return { kicker: 'while loop', code, qLine: 2, prompt: 'How many times does line 3 run?', type: 'choice', grid: 'row5', center: true,
+    options: [...numOpts(sim.forever ? start : sim.runs), { id: 'forever', html: 'Forever' }],
+    answer: sim.forever ? 'forever' : String(sim.runs), answerText: sim.forever ? 'Forever' : `${sim.runs}`, reveal };
+}
+
+/* =====================================================================
+   LESSON 2: BUILDING STRINGS (for + accumulator)
+   ===================================================================== */
+const NOISE = [...'bdfhjkmnpqrtvwxz'];
+const noise = (n, up) => Array.from({ length: n }, () => { const c = pick(NOISE); return up ? c.toUpperCase() : c; }).join('');
+const interleave = (target, up) => [...target].map(ch => noise(pick([0, 1, 1, 2]), up) + ch).join('') + noise(pick([0, 1]), up);
+function genBuild(kind) {
+  let code, word, test, mode = 'end', answer, isNum = false, expl, acc = 'result';
+  if (kind === 'upper' || kind === 'lower') {
+    const up = kind === 'upper';
+    const target = up ? pick(['CODE', 'SPY', 'HACK', 'KEY', 'LOOP', 'BYTE', 'ZERO']) : pick(['spy', 'code', 'hack', 'loop', 'byte', 'key']);
+    word = interleave(target, !up);
+    code = [`data = "${word}"`, 'result = ""', 'for ch in data:', `    if ch.${up ? 'isupper' : 'islower'}():`, '        result += ch', 'print(result)'];
+    test = c => up ? (c >= 'A' && c <= 'Z') : (c >= 'a' && c <= 'z'); answer = target;
+    expl = `Only ${up ? 'uppercase' : 'lowercase'} letters pass <code>ch.${up ? 'isupper' : 'islower'}()</code>, and each one is added to the end of <code>result</code>.`;
+  } else if (kind === 'skip') {
+    const S = pick([{ w: 'banana', c: 'a' }, { w: 'pizza', c: 'z' }, { w: 'h a c k e r', c: ' ' }, { w: 'mississippi', c: 's' }, { w: 'coffee', c: 'f' }, { w: 'balloon', c: 'l' }]);
+    word = S.w; code = [`word = "${word}"`, 'result = ""', 'for ch in word:', `    if ch != "${S.c}":`, '        result += ch', 'print(result)'];
+    test = c => c !== S.c; answer = word.split(S.c).join('');
+    expl = `Every character except <code>"${S.c}"</code> gets added.${S.c === ' ' ? ' A space is a character too, so it gets checked like any letter.' : ''}`;
+  } else if (kind === 'reverse') {
+    word = pick(['stressed', 'drawer', 'star', 'loop', 'live', 'parts', 'stop', 'snap', 'reward']);
+    code = [`word = "${word}"`, 'result = ""', 'for ch in word:', '    result = ch + result', 'print(result)'];
+    test = () => true; mode = 'front'; answer = [...word].reverse().join('');
+    expl = `<code>result = ch + result</code> puts each new letter in <b>front</b> of what's already there, so the word comes out backwards. <code>result += ch</code> would keep the order.`;
+  } else {
+    const S = pick([{ w: 'mississippi', c: 's' }, { w: 'banana', c: 'a' }, { w: 'bookkeeper', c: 'e' }, { w: 'committee', c: 't' }, { w: 'assassin', c: 's' }, { w: 'strawberry', c: 'r' }]);
+    word = S.w; acc = 'count'; isNum = true;
+    code = [`word = "${word}"`, 'count = 0', 'for ch in word:', `    if ch == "${S.c}":`, '        count += 1', 'print(count)'];
+    test = c => c === S.c; mode = 'count'; answer = String([...word].filter(test).length);
+    expl = `<code>count</code> goes up by 1 every time <code>ch</code> is <code>"${S.c}"</code>.`;
+  }
+  const reveal = async (el, ok, tok) => {
+    el.innerHTML = `<div class="explain"><div class="hd">Trace</div>
+      <div class="tiles">${[...word].map((c, i) => `<div class="tile" id="bt${i}">${c === ' ' ? '␣' : esc(c)}</div>`).join('')}</div>
+      <div class="accrow"><code>${acc}</code><span class="acc" id="acc">${mode === 'count' ? '0' : '""'}</span></div>
+      <p id="bexpl">${expl}</p></div>`;
+    let val = mode === 'count' ? 0 : '';
+    const speed = word.length > 12 ? 140 : 210;
+    for (let i = 0; i < word.length; i++) {
+      if (tok !== animTok) return;
+      const t = $('#bt' + i), c = word[i]; t.classList.add('cur');
+      await sleep(speed); if (tok !== animTok) return;
+      t.classList.remove('cur');
+      if (test(c)) {
+        val = mode === 'count' ? val + 1 : mode === 'front' ? c + val : val + c;
+        t.classList.add('kept'); $('#acc').textContent = mode === 'count' ? val : `"${val}"`; tone(660 + i * 20, .04, .02);
+      } else t.classList.add('skip');
+      await sleep(speed / 2);
+    }
+  };
+  return { kicker: 'for loop', code, qLine: code.length - 1, prompt: `What does line ${code.length} print?`, type: 'text', isNum, answer, reveal };
+}
+
+/* =====================================================================
+   LESSON 3: SECRET CODES (ord / chr)
+   ===================================================================== */
+const AL = 'abcdefghijklmnopqrstuvwxyz';
+const shiftWord = (w, k) => [...w].map(c => String.fromCharCode(c.charCodeAt(0) + k)).join('');
+function genCipher(kind) {
+  if (kind === 'ord') {
+    const i = rand(1, 12), ch = AL[i];
+    return { kicker: 'ord()', code: [`print(ord("${ch}"))`], prompt: `<code>ord("a")</code> is 97. What does this print?`, type: 'text', isNum: true,
+      above: stripHTML(false), answer: String(97 + i),
+      reveal: async el => { stripReveal('a', ch);
+        el.innerHTML = `<div class="explain"><div class="hd">Why</div><p>The letters are numbered in order. <code>${ch}</code> is ${i} step${i > 1 ? 's' : ''} after <code>a</code>, so its number is 97 + ${i} = <b>${97 + i}</b>.</p></div>`; } };
+  }
+  if (kind === 'fwd' || kind === 'back') {
+    const k = rand(1, 5), fwd = kind === 'fwd', i = fwd ? rand(0, 25 - k) : rand(k, 25), ch = AL[i], ans = AL[fwd ? i + k : i - k], n = 97 + i;
+    return { kicker: 'chr()', code: [`print(chr(ord("${ch}") ${fwd ? '+' : '-'} ${k}))`], prompt: 'Tap the character this prints.', type: 'strip', answer: ans,
+      reveal: async el => { stripReveal(ch, ans);
+        el.innerHTML = `<div class="explain"><div class="hd">Step by step</div><div class="calc">
+          <div>${hl(`ord("${ch}")`)} → ${n}</div><div style="animation-delay:.15s">${n} ${fwd ? '+' : '-'} ${k} → ${fwd ? n + k : n - k}</div>
+          <div style="animation-delay:.3s">${hl(`chr(${fwd ? n + k : n - k})`)} → "${ans}"</div></div>
+          <p>${fwd ? 'Adding' : 'Subtracting'} ${k} moves ${k} place${k > 1 ? 's' : ''} ${fwd ? 'right' : 'left'} along the strip.</p></div>`; } };
+  }
+  if (kind === 'past' || kind === 'wrap') {
+    const ch = pick(['w', 'x', 'y', 'z']), i = AL.indexOf(ch), k = rand(26 - i, Math.min(5, 126 - 97 - i)), n = 97 + i, raw = n + k, over = String.fromCharCode(raw);
+    if (kind === 'past') return { kicker: 'Past z', code: [`print(chr(ord("${ch}") + ${k}))`], prompt: 'Tap the character this prints.', type: 'strip', answer: over,
+      reveal: async el => { stripReveal(ch, over);
+        el.innerHTML = `<div class="explain"><div class="hd">The z bug</div><div class="calc"><div>${hl(`ord("${ch}")`)} → ${n}</div><div>${n} + ${k} → ${raw}</div><div>${hl(`chr(${raw})`)} → "${over}"</div></div>
+          <p><code>z</code> is 122. The numbers keep going after it, but they aren't letters anymore: 123 is <code>{</code>, 124 is <code>|</code>, 125 is <code>}</code>. That's why "zebra" breaks the cipher.</p></div>`; } };
+    const ans = AL[(i + k) % 26];
+    return { kicker: 'Wrap-around', code: [`n = ord("${ch}") + ${k}`, 'if n > 122:', '    n -= 26', 'print(chr(n))'], prompt: 'Tap the character this prints.', type: 'strip', answer: ans,
+      reveal: async el => { stripReveal(ch, ans, over);
+        el.innerHTML = `<div class="explain"><div class="hd">Step by step</div><div class="calc">
+          <div>n = ${n} + ${k} → ${raw}</div><div>${raw} &gt; 122 → ${boolChip(true)}</div><div>n -= 26 → ${raw - 26}</div><div>${hl(`chr(${raw - 26})`)} → "${ans}"</div></div>
+          <p>${raw} would be <code>${esc(over)}</code>, which isn't a letter. Subtracting 26 jumps back exactly one alphabet, so it lands on <code>${ans}</code>.</p></div>`; } };
+  }
+  // word / unword
+  const enc = kind === 'word', k = enc ? rand(1, 3) : 3;
+  const words = (enc ? ['cat', 'dog', 'spy', 'hi', 'map', 'code', 'bug', 'fox'] : ['hack', 'code', 'bad', 'lamp', 'fig', 'dig', 'cab', 'help']).filter(w => [...w].every(c => AL.indexOf(c) + k <= 25));
+  const plain = pick(words), input = enc ? plain : shiftWord(plain, k), out = enc ? shiftWord(plain, k) : plain, acc = enc ? 'secret' : 'message';
+  return { kicker: enc ? 'Encrypt' : 'Decrypt', code: [`${acc} = ""`, `for letter in "${input}":`, `    ${acc} += chr(ord(letter) ${enc ? '+' : '-'} ${k})`, `print(${acc})`],
+    qLine: 3, prompt: 'What does line 4 print?', type: 'text', above: stripHTML(false), answer: out,
+    reveal: async el => { stripReveal();
+      el.innerHTML = `<div class="explain"><div class="hd">Letter by letter</div><div class="tablewrap"><table class="t">
+        <tr><th>letter</th><th>ord</th><th>${enc ? '+' : '-'} ${k}</th><th>chr</th></tr>
+        ${[...input].map((c, i) => { const n = c.charCodeAt(0), m = enc ? n + k : n - k;
+          return `<tr class="in" style="animation-delay:${i * 120}ms"><td class="mono">"${c}"</td><td class="mono">${n}</td><td class="mono">${m}</td><td class="mono"><b>"${String.fromCharCode(m)}"</b></td></tr>`; }).join('')}
+      </table></div><p>Each new letter is added to the end of <code>${acc}</code>, giving <code>"${out}"</code>.</p></div>`; } };
+}
+
+/* =====================================================================
+   LESSON 4: COUNTING FROM ZERO (indexes)
+   ===================================================================== */
+const LISTS = [
+  { name: 'loadout', items: ['Pistol', 'Medkit', 'Frag Grenade', 'Combat Knife'] },
+  { name: 'backpack', items: ['Water', 'Rope', 'Map'] },
+  { name: 'squad', items: ['Ana', 'Ben', 'Cai', 'Dev', 'Eli'] },
+  { name: 'playlist', items: ['Intro', 'Boss Fight', 'Victory', 'Credits'] },
+  { name: 'airspace', items: ['Boeing 747', 'Cessna', 'Enemy Fighter', 'Helicopter'] },
+];
+function genIndex(kind) {
+  const Lst = pick(LISTS), { name, items } = Lst, n = items.length, def = `${name} = ${pySrcList(items)}`;
+  if (kind === 'len') return { kicker: 'len()', code: [def, `print(len(${name}))`], prompt: 'What does line 2 print?', above: boxesHTML(items, false),
+    type: 'choice', grid: 'row4', center: true, options: [n - 2, n - 1, n, n + 1].map(x => ({ id: String(x), html: `<span class="mono">${x}</span>` })), answer: String(n),
+    reveal: async el => { revealIndexes();
+      el.innerHTML = `<div class="explain"><div class="hd">Why</div><p><code>len()</code> counts the items the way a person would, starting from 1. There are <b>${n}</b>. The indexes only go up to ${n - 1} because they start at 0.</p></div>`; } };
+  const i = kind === 'oob' ? n : kind === 'last' ? n - 1 : pick([1, 2, 1, 2, 0, n - 1]);
+  const expr = kind === 'last' ? `${name}[len(${name}) - 1]` : `${name}[${i}]`;
+  return { kicker: kind === 'last' ? 'The last item' : 'Indexes', code: [def, `print(${expr})`], prompt: 'Which item does line 2 print? Tap it, or pick Error if there isn\'t one.',
+    type: 'boxes', items, allowError: true, answer: kind === 'oob' ? 'error' : String(i), answerText: kind === 'oob' ? 'Error' : `"${items[i]}"`,
+    reveal: async el => {
+      revealIndexes(kind === 'oob' ? n : null);
+      const body = kind === 'oob'
+        ? `<p class="err">IndexError: list index out of range</p><p><code>${name}</code> has ${n} items, so its indexes go from 0 to ${n - 1}. There is no index ${n}.</p>`
+        : kind === 'last' ? `<p><code>len(${name})</code> is ${n}, so <code>len(${name}) - 1</code> is ${n - 1}. That's always the last index, however long the list is.</p>`
+        : `<p>Indexes start at 0, so <code>${name}[${i}]</code> is the <b>${ORD[i]}</b> item: <code>"${esc(items[i])}"</code>.</p>`;
+      el.innerHTML = `<div class="explain"><div class="hd">Why</div>${body}</div>`;
+    } };
+}
+
+/* =====================================================================
+   LESSON 5: CHANGING A LIST
+   ===================================================================== */
+const POOL = ['Water', 'Rope', 'Map', 'Torch', 'Key', 'Apple'], NEWS = ['Magic Ring', 'Gold Coins', 'Compass', 'Potion', 'Shield'];
+function applyOp(s, op, wrong = false) {
+  s = [...s];
+  if (op.t === 'append') { if (wrong) { s.unshift(op.x); return { s, hi: { 0: 'new' } }; } s.push(op.x); return { s, hi: { [s.length - 1]: 'new' } }; }
+  if (op.t === 'pop') { if (!s.length) return { error: 'IndexError: pop from empty list' }; const r = wrong ? s.shift() : s.pop(); return { s, removed: r }; }
+  if (op.t === 'remove') {
+    const i = s.indexOf(op.x); if (i < 0) return { error: 'ValueError: list.remove(x): x not in list' };
+    if (wrong) { const r = s.pop(); return { s, removed: r }; } s.splice(i, 1); return { s, removed: op.x };
+  }
+  if (op.t === 'set') {
+    if (op.i >= s.length) return { error: 'IndexError: list assignment index out of range' };
+    if (wrong) { s.splice(op.i, 0, op.x); return { s, hi: { [op.i]: 'new' } }; } s[op.i] = op.x; return { s, hi: { [op.i]: 'changed' } };
+  }
+}
+const opCode = (name, op) => op.t === 'append' ? `${name}.append("${op.x}")` : op.t === 'pop' ? `${name}.pop()` : op.t === 'remove' ? `${name}.remove("${op.x}")` : `${name}[${op.i}] = "${op.x}"`;
+function runOps(start, ops, wrongAt = -1) {
+  let s = [...start]; const steps = [];
+  for (let k = 0; k < ops.length; k++) { const r = applyOp(s, ops[k], k === wrongAt); steps.push(r); if (r.error) return { steps, error: r.error }; s = r.s; }
+  return { steps, final: s };
+}
+function makeOps(start, count, allowErr) {
+  let s = [...start]; const ops = [];
+  for (let k = 0; k < count; k++) {
+    const kinds = s.length ? ['append', 'pop', 'remove', 'set'] : ['append'];
+    const t = pick(kinds), fresh = NEWS.filter(x => !s.includes(x) && !ops.some(o => o.x === x));
+    let op;
+    if (t === 'append') op = { t, x: pick(fresh) };
+    else if (t === 'pop') op = { t };
+    else if (t === 'remove') op = { t, x: pick(s) };
+    else op = { t, i: rand(0, s.length - 1), x: pick(fresh) };
+    ops.push(op); s = applyOp(s, op).s;
+  }
+  if (allowErr) { const gone = [...start, ...ops.filter(o => o.x).map(o => o.x)].filter(x => !s.includes(x)); ops.push({ t: 'remove', x: gone.length ? pick(gone) : pick(NEWS.filter(x => !s.includes(x))) }); }
+  return ops;
+}
+function stepsReveal(name, start, ops, run, tail = '') {
+  let rows = `<div class="step"><span class="sop">${hl(`${name} = ${pySrcList(start)}`)}</span>${mini(start)}</div>`;
+  run.steps.forEach((r, k) => {
+    const d = `style="animation-delay:${(k + 1) * 160}ms"`;
+    rows += r.error ? `<div class="step" ${d}><span class="sop">${hl(opCode(name, ops[k]))}</span><span class="err">${esc(r.error)}</span></div>`
+      : `<div class="step" ${d}><span class="sop">${hl(opCode(name, ops[k]))}</span>${mini(r.s, r.hi)}${r.removed ? `<span class="removed">removed "${esc(r.removed)}"</span>` : ''}</div>`;
+  });
+  return `<div class="explain"><div class="hd">Step by step</div><div class="steps">${rows}</div>${tail}</div>`;
+}
+function genChange(kind) {
+  const name = pick(['backpack', 'cart', 'inventory']);
+  if (kind === 'radar') {
+    const n = rand(3, 5), k = Math.min(n, pick([0, 1, 1, 2, 2, 3])), trick = Math.random() < 0.3 && k < n;
+    const others = shuffle(['Cessna', 'Boeing 747', 'Helicopter', 'Glider', 'Drone']).slice(0, n - k - (trick ? 1 : 0));
+    const list = shuffle([...Array(k).fill('Enemy Fighter'), ...others, ...(trick ? ['enemy fighter'] : [])]);
+    const code = [`airspace = ${pySrcList(list)}`, 'for plane in airspace:', '    if plane == "Enemy Fighter":', '        print("RED ALERT")', '    else:', '        print("Clear")'];
+    return { kicker: 'for + if', code, prompt: 'How many times does <code>RED ALERT</code> print?', type: 'choice', grid: 'row5', center: true,
+      options: [0, 1, 2, 3, 4].map(x => ({ id: String(x), html: `<span class="mono">${x}</span>` })), answer: String(k),
+      reveal: async el => {
+        el.innerHTML = `<div class="explain"><div class="hd">One plane at a time</div><div class="tablewrap"><table class="t">
+          <tr><th>plane</th><th>== "Enemy Fighter"</th><th>prints</th></tr>
+          ${list.map((p, i) => `<tr class="in" style="animation-delay:${i * 120}ms"><td class="mono">"${esc(p)}"</td><td>${boolChip(p === 'Enemy Fighter')}</td><td class="mono">${p === 'Enemy Fighter' ? '<b>RED ALERT</b>' : 'Clear'}</td></tr>`).join('')}
+        </table></div><p>The loop body runs once for every item in the list.${trick ? ' "enemy fighter" in lowercase isn\'t equal to "Enemy Fighter", so it counts as Clear.' : ''}</p></div>`;
+      } };
+  }
+  const start = shuffle(POOL).slice(0, kind === 'pop' ? 3 : pick([2, 3, 3]));
+  if (kind === 'pop') {
+    const ops = [{ t: 'pop' }], run = runOps(start, ops);
+    const code = [`${name} = ${pySrcList(start)}`, `item = ${name}.pop()`, 'print(item)'];
+    return { kicker: 'pop()', code, prompt: 'What does line 3 print?', type: 'choice', options: start.map((x, i) => ({ id: String(i), html: `<span class="mono">${esc(x)}</span>` })),
+      answer: String(start.length - 1), answerText: `"${start[start.length - 1]}"`,
+      reveal: async el => { el.innerHTML = stepsReveal(name, start, ops, run, `<p><code>pop()</code> takes the <b>last</b> item off the list and hands it back, so <code>item</code> is <code>"${esc(start[start.length - 1])}"</code>.</p>`); } };
+  }
+  const isLen = kind === 'len', err = !isLen && Math.random() < 0.18;
+  const ops = makeOps(start, pick([2, 3]), err), run = runOps(start, ops);
+  const code = [`${name} = ${pySrcList(start)}`, ...ops.map(o => opCode(name, o)), isLen ? `print(len(${name}))` : `print(${name})`];
+  const tail = run.error ? `<p>Python stops at the error. <code>remove()</code> can only delete something that's in the list.</p>`
+    : `<p>${isLen ? `<code>len(${name})</code> → <b>${run.final.length}</b>` : `<code>print(${name})</code> → <code>${esc(pyRepr(run.final))}</code>`}</p>`;
+  const reveal = async el => { el.innerHTML = stepsReveal(name, start, ops, run, tail); };
+  if (isLen) return { kicker: 'len()', code, prompt: `What does line ${code.length} print?`, type: 'choice', grid: 'row4', center: true,
+    options: numOpts(run.final.length), answer: String(run.final.length), reveal };
+  // candidate final lists: the right one, plus each op done the "wrong" way
+  const right = run.error ? null : run.final;
+  let cands = right ? [right] : [];
+  ops.forEach((_, k) => { const r = runOps(start, ops, k); if (!r.error) cands.push(r.final); });
+  const ok0 = right || runOps(start, ops.slice(0, -1)).final;
+  cands.push([...ok0].reverse(), [...ok0, pick(NEWS)], start);
+  const seen = new Set(), opts = [];
+  cands.forEach(c => { const key = JSON.stringify(c); if (!seen.has(key) && opts.length < 4) { seen.add(key); opts.push(c); } });
+  const order = shuffle(opts.map((c, i) => i));
+  const options = order.map(i => ({ id: 'L' + i, html: mini(opts[i]) }));
+  options.push({ id: 'error', html: '<span>Error</span>' });
+  return { kicker: 'append · pop · remove', code, prompt: `What does line ${code.length} print?`, type: 'choice', options,
+    expect: run.error ? 'error' : pyRepr(run.final),   // used by the answer-checking test, not shown
+    answer: run.error ? 'error' : 'L0', answerText: run.error ? 'Error' : `<code>${esc(pyRepr(run.final))}</code>`, reveal };
+}
+
+/* =====================================================================
+   LESSON RUNNER (shared by every lesson)
+   ===================================================================== */
+const LESSONS = [
+  { id: 'while', unit: 'Loops', title: 'How Many Times?', desc: 'Trace a while loop, and spot the ones that never stop.', icon: ICON.loop, gen: genWhile,
+    plan: ['down', 'down', 'up', 'up', 'noupdate', 'wrongway', 'skip', 'never'],
+    intro: { paras: ['A <code>while</code> loop checks its condition, runs the body, then checks again. It stops the first time the condition is <b>False</b>.', 'If nothing ever makes it False, it never stops.'],
+      code: ['n = 3', 'while n > 0:', '    print(n)', '    n -= 1'] } },
+  { id: 'build', unit: 'Loops', title: 'Building Strings', desc: 'Loop through text one character at a time.', icon: ICON.build, gen: genBuild,
+    plan: ['upper', 'lower', 'skip', 'skip', 'reverse', 'reverse', 'count'],
+    intro: { paras: ['A <code>for</code> loop hands you one character at a time. Start with an empty string <code>""</code> and add to it with <code>+=</code> to build something new.'],
+      code: ['result = ""', 'for ch in "hey":', '    result += ch'] } },
+  { id: 'cipher', unit: 'Loops', title: 'Secret Codes', desc: 'Letters are numbers: ord(), chr() and the Caesar shift.', icon: ICON.cipher, gen: genCipher,
+    plan: ['ord', 'fwd', 'back', 'fwd', 'past', 'wrap', 'word', 'unword', 'word'],
+    intro: { paras: ['Every character has a number. <code>ord("a")</code> is 97, <code>ord("b")</code> is 98, all the way to <code>ord("z")</code>, which is 122.', '<code>chr()</code> goes the other way, from a number back to a character.'],
+      code: ['print(ord("a"))   # 97', 'print(chr(98))    # b'] } },
+  { id: 'index', unit: 'Lists', title: 'Counting from Zero', desc: 'Find items in a list by their index.', icon: ICON.index, gen: genIndex,
+    plan: ['get', 'get', 'get', 'last', 'oob', 'len', 'get', 'oob'],
+    intro: { paras: ['A list keeps items in order. Python numbers the positions starting from <b>0</b>, so the first item is at index 0.'],
+      code: ['loadout = ["Pistol", "Medkit"]', 'print(loadout[0])   # Pistol'] } },
+  { id: 'change', unit: 'Lists', title: 'Changing a List', desc: 'append, pop, remove, and looping over a list.', icon: ICON.change, gen: genChange,
+    plan: ['ops', 'ops', 'ops', 'ops', 'pop', 'radar', 'radar', 'len'],
+    intro: { paras: ['Lists can grow and shrink. <code>append()</code> adds to the end, <code>pop()</code> takes the last item off, and <code>remove()</code> deletes a specific item.'],
+      code: ['backpack = ["Water", "Rope"]', 'backpack.append("Map")', 'backpack.remove("Rope")'] } },
+];
+function buildQueue(Ls) {
+  const seen = new Set(), out = [];
+  shuffle(Ls.plan).forEach(kind => {
+    let q, key, guard = 0;
+    do { q = Ls.gen(kind); key = q.code.join('\n') + q.prompt; } while (seen.has(key) && guard++ < 30);
+    seen.add(key); out.push(q);
+  });
+  return out;
+}
+
+let R = null;
+function openLesson(id) {
+  const Ls = LESSONS.find(l => l.id === id), n = LESSONS.indexOf(Ls) + 1;
+  leave(); screen = 'intro';
+  app.innerHTML = topbar(0) + `<div class="stage introcard">
+    <div class="bigicon">${Ls.icon}</div><div class="kicker">${Ls.unit} · Lesson ${n}</div><h2>${Ls.title}</h2>
+    ${Ls.intro.paras.map(p => `<p>${p}</p>`).join('')}${codeBlock(Ls.intro.code, { id: 'ic' })}</div>`;
+  setFoot('idle', { btn: 'Start', onClick: () => startLesson(id) });
+}
+function startLesson(id) {
+  leave(); screen = 'lesson';
+  const Ls = LESSONS.find(l => l.id === id);
+  R = { Ls, queue: buildQueue(Ls), i: 0, firstRight: 0 };
+  renderQ();
+}
+function widget(q) {
+  if (q.type === 'choice') return `<div class="choices ${q.grid || ''}">${q.options.map(o =>
+    `<button class="choice${q.center ? ' center' : ''}" data-id="${esc(o.id)}" onclick="selectQ(this)">${o.html}</button>`).join('')}</div>`;
+  if (q.type === 'text') return `<input id="txt" class="txt" autocomplete="off" autocapitalize="off" spellcheck="false" ${q.isNum ? 'inputmode="numeric" placeholder="Type a number"' : 'placeholder="Type exactly what it prints"'}>`;
+  if (q.type === 'strip') return stripHTML(true);
+  if (q.type === 'boxes') return boxesHTML(q.items, true) + (q.allowError
+    ? `<div class="choices"><button class="choice" data-id="error" onclick="selectQ(this)">Error <span class="sub">there's no such item</span></button></div>` : '');
+}
+function renderQ() {
+  const q = R.queue[R.i]; R.sel = null; R.checked = false;
+  app.innerHTML = topbar(R.i / R.queue.length * 100, `${R.i + 1} / ${R.queue.length}`) + `<div class="stage">
+    <div class="kicker">${q.kicker}${q.again ? ' · second try' : ''}</div>
+    <div class="prompt">${q.prompt}</div>
+    ${codeBlock(q.code, { id: 'qc', q: q.qLine ?? -1 })}
+    ${q.above || ''}
+    <div id="ans">${widget(q)}</div>
+    <div id="rev"></div></div>`;
+  setFoot('idle', { btn: 'Check', disabled: true, onClick: checkQ });
+  window.scrollTo(0, 0);
+  const inp = $('#txt');
+  if (inp) { inp.addEventListener('input', () => { R.sel = inp.value; enableFoot(inp.value.trim() !== ''); }); setTimeout(() => inp.focus({ preventScroll: true }), 60); }
+}
+function selectQ(el) {
+  if (R.checked) return;
+  R.sel = el.dataset.id; $$('#ans [data-id]').forEach(x => x.classList.toggle('sel', x === el)); enableFoot(true); sfxTick();
+}
+const normText = (s, isNum) => { s = s.trim(); if (/^(["']).*\1$/.test(s) && s.length >= 2) s = s.slice(1, -1); return isNum ? s.replace(/\s/g, '') : s; };
+function checkQ() {
+  if (R.checked || R.sel == null) return;
+  R.checked = true;
+  const q = R.queue[R.i];
+  const given = q.type === 'text' ? normText(R.sel, q.isNum) : R.sel, ok = given === String(q.answer);
+  if (q.type === 'text') { const inp = $('#txt'); inp.disabled = true; inp.classList.add(ok ? 'right' : 'wrong'); }
+  else $$('#ans [data-id]').forEach(x => {
+    x.classList.add('locked'); x.classList.remove('sel');
+    if (x.dataset.id === String(q.answer)) x.classList.add('right'); else if (x.dataset.id === R.sel) x.classList.add('wrong');
+  });
+  if (ok) { if (!q.again) R.firstRight++; sfxGood(); }
+  else { sfxBad(); if (!q.again) R.queue.splice(Math.min(R.i + 3, R.queue.length), 0, { ...q, again: true }); }
+  const ansText = q.answerText ?? (q.type === 'text' && !q.isNum ? `<code>${esc(q.answer)}</code>` : esc(q.answer));
+  setFoot(ok ? 'good' : 'bad', { title: ok ? 'Correct' : 'Not quite', text: ok ? '' : `The answer is ${ansText}.${q.again ? '' : ' You\'ll see this one again.'}`, btn: 'Continue', onClick: nextQ });
+  q.reveal($('#rev'), ok, animTok);
+}
+function nextQ() {
+  animTok++; R.i++;
+  if (R.i < R.queue.length) return renderQ();
+  const firstTotal = R.queue.filter(q => !q.again).length, id = R.Ls.id;
+  if (!(save.best[id] >= R.firstRight)) save.best[id] = R.firstRight;
+  save.done[id] = true; persist();
+  leave(); screen = 'done'; sfxWin();
+  const next = LESSONS[LESSONS.indexOf(R.Ls) + 1];
+  app.innerHTML = topbar(100) + `<div class="stage center"><div class="bigcheck">${ICON.checkBig}</div>
+    <h2>Lesson complete</h2><p class="muted">Questions you missed came back once more.</p>
+    <div class="stats"><div class="stat"><b>${R.firstRight}/${firstTotal}</b><span>right first time</span></div><div class="stat"><b>${R.queue.length}</b><span>questions</span></div></div></div>`;
+  setFoot('idle', { btn: next ? 'Next lesson' : 'Back to course', onClick: next ? () => openLesson(next.id) : course, alt: 'Back to course', onAlt: course });
+  if (!next) setFoot('idle', { btn: 'Back to course', onClick: course, alt: 'Practice again', onAlt: () => startLesson(id) });
+}
+
+/* =====================================================================
+   COURSE PAGE
+   ===================================================================== */
+function course() {
+  leave(); screen = 'course'; hideFoot();
+  const next = LESSONS.findIndex(l => !save.done[l.id]);
+  const row = (l, i) => `
+    <div class="lesson${save.done[l.id] ? ' done' : ''}${i === next ? ' next' : ''}" onclick="openLesson('${l.id}')">
+      <div class="node">${l.icon}${save.done[l.id] ? `<span class="badge">${ICON.checkSm}</span>` : ''}</div>
+      <div><div class="lnum">Lesson ${i + 1}</div><h3>${l.title}</h3><p>${l.desc}</p></div>
+      <div class="meta">${i === next ? '<span class="startpill">Start</span>' : save.done[l.id] ? 'Review' : ''}</div></div>`;
+  app.innerHTML = `<div class="page">
+    <div class="eyebrow">Week 3 · Python</div>
+    <h1>Loops &amp; Lists</h1>
+    <p class="lede">Make the computer repeat itself, and keep many things in one variable. Five short lessons.</p>
+    <div class="section-title">Loops</div>${LESSONS.filter(l => l.unit === 'Loops').map(l => row(l, LESSONS.indexOf(l))).join('')}
+    <div class="section-title">Lists</div>${LESSONS.filter(l => l.unit === 'Lists').map(l => row(l, LESSONS.indexOf(l))).join('')}
+    <div class="section-title">Reference</div>
+    <details class="ref"><summary>while or for?</summary>
+      <div class="tablewrap" style="margin:0"><table class="t">
+        <tr><th>Loop</th><th>Use it when</th><th>Example</th></tr>
+        <tr><td class="mono">while</td><td>You repeat <b>until something changes</b>. You must change the condition yourself.</td><td>${cd('while lives > 0:')}</td></tr>
+        <tr><td class="mono">for</td><td>You go through <b>every item</b> in a string or list, one at a time.</td><td>${cd('for ch in word:')}</td></tr>
+      </table></div></details>
+    <details class="ref"><summary>List cheat sheet</summary>
+      <div class="tablewrap" style="margin:0"><table class="t">
+        <tr><th>Code</th><th>Does</th></tr>
+        <tr><td class="mono">${hl('items[0]')}</td><td>The first item. Indexes start at 0.</td></tr>
+        <tr><td class="mono">${hl('items[len(items) - 1]')}</td><td>The last item.</td></tr>
+        <tr><td class="mono">${hl('items.append("Map")')}</td><td>Adds "Map" to the end.</td></tr>
+        <tr><td class="mono">${hl('items.pop()')}</td><td>Removes the last item and gives it back.</td></tr>
+        <tr><td class="mono">${hl('items.remove("Rope")')}</td><td>Deletes "Rope". Error if it isn't there.</td></tr>
+        <tr><td class="mono">${hl('items[1] = "Key"')}</td><td>Replaces the item at index 1.</td></tr>
+        <tr><td class="mono">${hl('len(items)')}</td><td>How many items there are.</td></tr>
+      </table></div></details>
+    <div class="foot-links"><button class="linkbtn" onclick="toggleMute()">Sound: ${save.muted ? 'off' : 'on'}</button>
+      &nbsp;·&nbsp; <button class="linkbtn" id="resetLink" onclick="resetProgress()">Reset progress</button></div>
+  </div>`;
+}
+function toggleMute() { save.muted = !save.muted; persist(); course(); }
+let resetArmed = false;
+function resetProgress() {
+  const link = $('#resetLink');
+  if (!resetArmed) { resetArmed = true; link.textContent = 'Click again to clear all progress'; setTimeout(() => { resetArmed = false; if (link.isConnected) link.textContent = 'Reset progress'; }, 4000); return; }
+  resetArmed = false; save = { done: {}, best: {}, muted: save.muted }; persist(); course();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { const b = $('#footBtn'); if (b && !b.disabled) { e.preventDefault(); b.click(); } }
+});
+course();
+</script>
+</body>
+</html>

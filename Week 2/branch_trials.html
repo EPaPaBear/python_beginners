@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conditionals · Week 2</title>
+<!--
+  WEEK 2: CONDITIONALS (interactive lessons)
+  Open this file in any browser. No install or internet needed. Progress is saved in the browser.
+
+  Lessons, in teaching order:
+    1 True or False?      comparison operators, = vs ==, exact string matching, the input() string trap, and/or
+    2 Rules into Code     turning English rules ("at least", "under", "exactly") into symbols, shown on a number line
+    3 Which Lines Run?    if vs if/else vs if/elif/else vs separate ifs, with a step-by-step trace
+    4 Ordering the Chain  reordering elif branches, because the first True wins
+
+  Question content lives in plain arrays: NUM_VARS / PAIRS / STRS / INPUTS (lesson 1), GATES (2), TRACE (3), LADDERS (4).
+-->
+<style>
+:root{
+  --bg:#ffffff; --soft:#f5f6f8; --line:#e2e5e9; --line2:#c9cfd6; --ink:#16181d; --muted:#5d6570; --faint:#9aa1aa;
+  --blue:#2f6bff; --blue-soft:#ebf1ff; --blue-ink:#1f4fc4;
+  --green:#1f9d55; --green-soft:#e8f6ee; --green-ink:#14693a;
+  --red:#e0484e; --red-soft:#fdeeee; --red-ink:#a3262c;
+  --amber:#d48a12; --amber-soft:#fff5e0;
+  --mono:"Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+  --sans:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",sans-serif;
+}
+/* students must SEE the two characters in != and >=, so no font ligatures anywhere */
+*{box-sizing:border-box;font-variant-ligatures:none !important;font-feature-settings:"liga" 0,"calt" 0 !important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit}
+code{font-family:var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.88em;white-space:nowrap}
+.muted{color:var(--muted)}
+h2{font-size:28px;line-height:1.2;letter-spacing:-.015em;margin:0 0 10px}
+
+/* ---------- course page ---------- */
+.page{max-width:720px;margin:0 auto;padding:52px 22px 80px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.page h1{font-size:44px;line-height:1.05;margin:8px 0 12px;letter-spacing:-.025em}
+.lede{color:var(--muted);font-size:19px;margin:0 0 34px;max-width:560px}
+.lesson{display:flex;gap:18px;align-items:center;padding:16px 18px;border:2px solid var(--line);border-bottom-width:4px;border-radius:18px;
+  background:#fff;cursor:pointer;margin-bottom:12px;transition:border-color .12s}
+.lesson:hover{border-color:var(--line2)}
+.lesson.next{border-color:var(--blue)}
+.node{width:58px;height:58px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue);position:relative}
+.lesson.done .node{background:var(--green-soft);color:var(--green)}
+.badge{position:absolute;right:-3px;bottom:-3px;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;border:3px solid #fff}
+.lnum{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.lesson h3{margin:0;font-size:19px;letter-spacing:-.01em}
+.lesson p{margin:2px 0 0;color:var(--muted);font-size:15px}
+.lesson .meta{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap;padding-left:8px}
+.startpill{background:var(--blue);color:#fff;font-weight:700;border-radius:99px;padding:6px 14px}
+.section-title{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:40px 0 12px}
+details.ref{border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;background:#fff}
+details.ref summary{cursor:pointer;font-weight:650}
+details.ref[open] summary{margin-bottom:10px}
+.foot-links{margin-top:28px;font-size:14px;color:var(--faint)}
+.linkbtn{background:none;border:0;padding:0;color:var(--muted);cursor:pointer;text-decoration:underline;font-size:14px}
+
+/* ---------- lesson shell ---------- */
+.topbar{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.96);backdrop-filter:blur(4px)}
+.topbar .in{display:flex;align-items:center;gap:16px;padding:14px 20px;max-width:760px;margin:0 auto}
+.iconbtn{background:none;border:0;color:var(--muted);cursor:pointer;padding:6px;border-radius:10px;display:grid;place-items:center}
+.iconbtn:hover{background:var(--soft);color:var(--ink)}
+.progress{flex:1;height:12px;background:var(--soft);border-radius:99px;overflow:hidden}
+.progress>div{height:100%;background:var(--green);border-radius:99px;transition:width .4s ease}
+.progress.timer>div{background:var(--blue);transition:width 1s linear}
+.progress.timer.low>div{background:var(--red)}
+.topstat{font-size:15px;font-weight:650;color:var(--muted);white-space:nowrap;min-width:3.5em;text-align:right}
+.stage{max-width:680px;margin:0 auto;padding:18px 22px 200px}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
+.prompt{font-size:23px;font-weight:650;line-height:1.35;margin:0 0 18px;letter-spacing:-.012em}
+.center{text-align:center}
+
+/* ---------- code ---------- */
+.code{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:12px 0;font:16px/1.75 var(--mono);overflow-x:auto;margin:0 0 20px}
+.ln{display:flex;align-items:center;white-space:pre;padding-right:16px;width:max-content;min-width:100%;border-left:3px solid transparent;transition:background .2s,opacity .25s}
+.ln .g{width:2.7em;text-align:right;padding-right:1.1em;color:#b6bcc4;flex:none;user-select:none}
+.ln.q,.ln.cur{background:var(--blue-soft);border-left-color:var(--blue)}
+.ln.true{background:var(--green-soft);border-left-color:var(--green)}
+.ln.false{background:var(--red-soft);border-left-color:var(--red)}
+.ln.run{background:var(--amber-soft);border-left-color:var(--amber)}
+.ln.dim{opacity:.38}
+.tag{display:inline-block;margin-left:14px;padding:0 10px;border-radius:99px;font:600 13px/1.75 var(--sans);white-space:nowrap;animation:rise .2s ease}
+.tag.t{background:#cdeedb;color:var(--green-ink)} .tag.f{background:#fad6d8;color:var(--red-ink)}
+.tag.s{background:#e9ecf0;color:var(--muted)} .tag.r{background:#ffe6b3;color:#7a4b00}
+.k{color:#a626a4} .s{color:#3f8f3e} .n{color:#b46200} .o{color:#0179b0;font-weight:700} .fn{color:#3d6fe0} .cm{color:#9ba0a8;font-style:italic}
+
+/* ---------- choices ---------- */
+.choices{display:grid;gap:10px}
+.choices.row3{grid-template-columns:repeat(3,1fr)}
+.choice{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-bottom-width:4px;
+  border-radius:14px;padding:14px 16px;font-weight:650;font-size:18px;cursor:pointer;transition:border-color .12s,background .12s}
+.choice.center{justify-content:center;text-align:center}
+.choice:hover{border-color:var(--line2)}
+.choice.sel{border-color:var(--blue);background:var(--blue-soft);color:var(--blue-ink)}
+.choice.right{border-color:var(--green);background:var(--green-soft);color:var(--green-ink)}
+.choice.wrong{border-color:var(--red);background:var(--red-soft);color:var(--red-ink)}
+.choice.missed{border-color:var(--green);border-style:dashed;color:var(--green-ink)}
+.choice.locked{pointer-events:none}
+.choice .sub{display:block;font-weight:500;font-size:13px;color:var(--muted)}
+.choice .box{width:22px;height:22px;border:2px solid var(--line2);border-radius:6px;flex:none;display:grid;place-items:center;color:#fff}
+.choice.sel .box{background:var(--blue);border-color:var(--blue)}
+.choice.right .box{background:var(--green);border-color:var(--green)}
+.choice.wrong .box{background:var(--red);border-color:var(--red)}
+.choice .mono{font-family:var(--mono);font-weight:600;font-size:16px}
+.choice .note{margin-left:auto;font-size:13px;font-weight:600}
+
+/* ---------- explanation + visuals ---------- */
+.explain{margin-top:22px;border:1px solid var(--line);border-radius:16px;padding:18px 18px 8px;background:#fff;animation:rise .25s ease}
+.explain .hd{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.explain p{margin:0 0 12px}
+.evalline{font:600 16px/1.6 var(--mono);margin-bottom:12px;overflow-x:auto;white-space:nowrap}
+.bool{display:inline-block;padding:0 10px;border-radius:8px;font:700 15px/1.7 var(--mono)}
+.bool.True{background:#cdeedb;color:var(--green-ink)} .bool.False{background:#fad6d8;color:var(--red-ink)} .bool.Error{background:#ffe6b3;color:#7a4b00}
+.vis{background:var(--soft);border-radius:12px;padding:12px 14px;margin:0 0 12px}
+.vis svg{display:block;width:100%;height:auto}
+.cap{font-size:14px;color:var(--muted);margin-top:4px}
+.tilerow{display:flex;align-items:center;gap:12px;margin:6px 0;overflow-x:auto}
+.tilerow .lab{min-width:84px;font:13px var(--mono);color:var(--muted);text-align:right;flex:none}
+.tiles{display:flex;gap:4px}
+.tile{width:30px;height:38px;border:2px solid var(--line);border-radius:8px;display:grid;place-items:center;font:600 17px var(--mono);background:#fff;flex:none}
+.tile.bad{border-color:var(--red);background:var(--red-soft);color:var(--red-ink)}
+.tile.empty{border-style:dashed;background:transparent}
+.vals{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.val{border:2px solid var(--line);border-radius:12px;padding:6px 14px;text-align:center;background:#fff}
+.val b{display:block;font:700 20px var(--mono)}
+.val span{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.val.str{border-color:#a9d8b0} .val.int{border-color:#efc98a}
+.op{font:700 20px var(--mono);color:var(--muted)}
+.tt{border-collapse:collapse;font:600 14px var(--mono);margin-top:8px;background:#fff}
+.tt td,.tt th{padding:4px 14px;border:1px solid var(--line);text-align:center}
+.tt th{font-family:var(--sans);font-size:12px;color:var(--muted)}
+.tt tr.hit td{background:var(--blue-soft);color:var(--blue-ink)}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.twocol>div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px}
+.twocol b{font:700 22px var(--mono);display:block}
+
+/* ---------- lesson 2 ---------- */
+.rule{border-left:4px solid var(--blue);background:var(--blue-soft);padding:12px 16px;border-radius:0 12px 12px 0;font-size:19px;margin:0 0 18px}
+.slot{display:inline-grid;place-items:center;min-width:2.8em;height:1.65em;border:2px dashed var(--line2);border-radius:8px;padding:0 6px;margin:0 2px;
+  cursor:pointer;color:var(--faint);font-weight:700;vertical-align:middle;background:#fff;line-height:1}
+.slot.active{border-color:var(--blue);border-style:solid;background:var(--blue-soft);color:var(--blue)}
+.slot.filled{border-style:solid;border-color:var(--ink);color:var(--ink)}
+.slot.filled.active{border-color:var(--blue);color:var(--blue-ink)}
+.keys{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.key{min-width:58px;padding:9px 14px;border:2px solid var(--line);border-bottom-width:4px;border-radius:12px;background:#fff;font:700 18px var(--mono);cursor:pointer}
+.key:hover{border-color:var(--line2)}
+.hints{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:14px;color:var(--muted);margin:0 0 20px}
+.hints b{font-family:var(--mono);color:var(--ink)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;margin:0 0 18px}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--soft);font-weight:700}
+table.t td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+td.mono{font-family:var(--mono);font-size:14px}
+td.mono div{white-space:nowrap}
+.ok{color:var(--green-ink);font-weight:650} .no{color:var(--red-ink);font-weight:650} .pending{color:var(--faint)}
+
+/* ---------- lesson 3 ---------- */
+.output{border:1px solid var(--line);border-radius:14px;margin:0 0 18px;overflow:hidden;animation:rise .25s ease}
+.output .hd{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 14px;background:var(--soft);border-bottom:1px solid var(--line)}
+.output .bd{padding:10px 14px;font:16px/1.65 var(--mono);min-height:46px}
+.output .bd div{animation:rise .2s ease}
+
+/* ---------- lesson 4 ---------- */
+.rung{display:flex;align-items:stretch;border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;background:#fff;margin-bottom:10px;overflow:hidden}
+.rung .grip{width:30px;display:grid;place-items:center;color:#c2c8cf;background:var(--soft);flex:none;border-right:1px solid var(--line)}
+.rung .code{margin:0;border:0;border-radius:0;flex:1;min-width:0;background:#fff;padding:8px 0}
+.rung .moves{display:flex;flex-direction:column;border-left:1px solid var(--line)}
+.rung .moves button{flex:1;background:#fff;border:0;padding:0 16px;cursor:pointer;color:var(--muted);display:grid;place-items:center}
+.rung .moves button:hover:not(:disabled){background:var(--soft);color:var(--ink)}
+.rung .moves button:disabled{opacity:.25;cursor:default}
+.rung .moves button+button{border-top:1px solid var(--line)}
+.rung.fixed{border-style:dashed;border-bottom-width:2px}
+.rung.fixed .grip{color:var(--line2)}
+.rung.moved{animation:rise .2s ease}
+
+/* ---------- footer (check / feedback bar) ---------- */
+.footer{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:2px solid var(--line);transition:background .2s,border-color .2s}
+.footer.hidden{display:none}
+.footer .in{max-width:680px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;gap:16px;min-height:84px}
+.footer.good{background:var(--green-soft);border-color:#b9e3c9}
+.footer.bad{background:var(--red-soft);border-color:#f3c4c6}
+.fb{display:flex;gap:12px;align-items:center;flex:1;min-width:0}
+.fb-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none;animation:popin .3s cubic-bezier(.2,1.5,.5,1)}
+.good .fb-icon{background:var(--green)} .bad .fb-icon{background:var(--red)}
+.fb-title{font-weight:750;font-size:20px}
+.good .fb-title{color:var(--green-ink)} .bad .fb-title{color:var(--red-ink)}
+.fb-text{font-size:15px;color:var(--muted)}
+.actions{display:flex;gap:10px;align-items:center;flex:none}
+.btn-primary{background:var(--ink);color:#fff;border:0;border-radius:14px;padding:14px 30px;font-weight:750;font-size:17px;cursor:pointer;box-shadow:0 4px 0 #000}
+.btn-primary:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.btn-primary:disabled{background:#d7dbe0;box-shadow:0 4px 0 #c4c9cf;cursor:default;transform:none}
+.good .btn-primary{background:var(--green);box-shadow:0 4px 0 #157a41}
+.bad .btn-primary{background:var(--red);box-shadow:0 4px 0 #b3333a}
+.btn-ghost{background:none;border:2px solid var(--line2);border-radius:14px;padding:12px 20px;font-weight:700;font-size:16px;cursor:pointer;color:var(--muted)}
+.btn-ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+/* ---------- intro + complete ---------- */
+.introcard{text-align:center;padding-top:28px}
+.bigicon{width:96px;height:96px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;margin:0 auto 22px}
+.bigicon svg{width:48px;height:48px}
+.introcard p{font-size:18px;color:var(--muted);max-width:520px;margin:0 auto 14px}
+.introcard .code{text-align:left;max-width:420px;margin:22px auto 0}
+.bigcheck{width:96px;height:96px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;margin:28px auto 22px;animation:popin .4s cubic-bezier(.2,1.5,.5,1)}
+.stats{display:flex;justify-content:center;gap:12px;margin:24px 0 30px;flex-wrap:wrap}
+.stat{border:2px solid var(--line);border-radius:16px;padding:12px 20px;min-width:120px}
+.stat b{display:block;font-size:28px;letter-spacing:-.02em}
+.stat span{font-size:13px;color:var(--muted)}
+.review{text-align:left;border-top:1px solid var(--line);padding-top:20px}
+.review .item{margin-bottom:22px}
+
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes popin{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+@media (max-width:560px){
+  .page{padding:32px 16px 60px} .page h1{font-size:36px}
+  .stage{padding:12px 16px 230px}
+  .prompt{font-size:20px}
+  .code{font-size:14.5px}
+  .choice{font-size:16px;padding:12px}
+  .lesson .meta{display:none}
+  .footer .in{flex-wrap:wrap;padding:14px 16px}
+  .actions{width:100%} .actions .btn-primary{flex:1}
+  .fb-title{font-size:18px}
+  .twocol{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="footer hidden" id="foot"></div>
+
+<script>
+/* =====================================================================
+   HELPERS
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const app = $('#app'), foot = $('#foot');
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const py = v => typeof v === 'string' ? `"${v}"` : String(v);
+const pyBool = b => b ? 'True' : 'False';
+const boolChip = s => `<span class="bool ${s}">${s}</span>`;
+let screen = 'course';
+let animTok = 0;
+
+const ICON = {
+  close: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  check: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  checkSm: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  checkBig: '<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+  up: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  grip: '<svg viewBox="0 0 10 16" width="10" height="16" fill="currentColor"><circle cx="2.5" cy="3" r="1.5"/><circle cx="7.5" cy="3" r="1.5"/><circle cx="2.5" cy="8" r="1.5"/><circle cx="7.5" cy="8" r="1.5"/><circle cx="2.5" cy="13" r="1.5"/><circle cx="7.5" cy="13" r="1.5"/></svg>',
+  // lesson icons
+  truth: '<svg viewBox="0 0 32 32" width="30" height="30"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M16 5a11 11 0 0 1 0 22z" fill="currentColor"/></svg>',
+  gate: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 22h24"/><path d="M9 22V9M23 22V9"/><circle cx="16" cy="13" r="3" fill="currentColor" stroke="none"/></svg>',
+  branch: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v9M16 13l-8 8v7M16 13l8 8v7"/><circle cx="16" cy="13" r="2.5" fill="currentColor" stroke="none"/></svg>',
+  ladder: '<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="4" width="20" height="6" rx="2"/><rect x="6" y="13" width="20" height="6" rx="2"/><rect x="6" y="22" width="20" height="6" rx="2" stroke-dasharray="3 2.5"/></svg>',
+};
+
+// tiny Python syntax highlighter (light theme)
+function hl(src) {
+  const re = /(#.*$)|("[^"]*")|\b(if|elif|else|and|or|not|True|False)\b|\b(print|input|int|float|str)\b|(-?\b\d+(?:\.\d+)?\b)|(==|!=|>=|<=|>|<)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    const cls = m[1] ? 'cm' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 'fn' : m[5] ? 'n' : 'o';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+const cd = s => `<code>${hl(s)}</code>`;
+function codeBlock(lines, { id = 'L', q = -1, start = 1, raw = false } = {}) {
+  return `<div class="code">${lines.map((t, i) =>
+    `<div class="ln${i === q ? ' q' : ''}" id="${id}${i}"><span class="g">${i + start}</span><span class="tx">${raw ? t : (hl(t) || ' ')}</span></div>`
+  ).join('')}</div>`;
+}
+
+/* ---------- Python-accurate comparisons ---------- */
+function cmp(a, op, b) {
+  const same = typeof a === typeof b;
+  if (op === '==') return { val: same && a === b };
+  if (op === '!=') return { val: !(same && a === b) };
+  if (!same) return { crash: 'TypeError' };
+  switch (op) {
+    case '>': return { val: a > b };
+    case '<': return { val: a < b };
+    case '>=': return { val: a >= b };
+    case '<=': return { val: a <= b };
+  }
+}
+// A condition: {t:[[var,op,rhs], ...], j:'and'|'or'}
+const C = (v, o, r) => ({ t: [[v, o, r]] });
+const C2 = (v1, o1, r1, j, v2, o2, r2) => ({ t: [[v1, o1, r1], [v2, o2, r2]], j });
+const condText = c => c.t.map(([v, o, r]) => `${v} ${o} ${py(r)}`).join(` ${c.j} `);
+const condSub = (c, env) => c.t.map(([v, o, r]) => `${py(env[v])} ${o} ${py(r)}`).join(` ${c.j} `);
+function evalCond(c, env) {
+  const vals = c.t.map(([v, o, r]) => cmp(env[v], o, r).val);
+  return c.j === 'or' ? vals.some(Boolean) : vals.every(Boolean);
+}
+const envText = env => Object.entries(env).map(([k, v]) => `${k} = ${py(v)}`).join(', ');
+const envCell = env => Object.entries(env).map(([k, v]) => `<div>${hl(`${k} = ${py(v)}`)}</div>`).join('');
+
+/* ---------- number line (SVG) ----------
+   Shades the part of the line where `cond` is True.
+   Filled dot = that number counts, hollow dot = it doesn't. */
+function numberLine({ v, cond, value = null, pins = [] }) {
+  const ths = [...new Set(cond ? cond.t.map(t => t[2]) : [])].sort((a, b) => a - b);
+  const pts = [...ths, ...(value != null ? [value] : []), ...pins.map(p => p.x)];
+  const lo0 = Math.min(...pts), hi0 = Math.max(...pts), padN = Math.max(3, Math.ceil((hi0 - lo0) * 0.12));
+  const lo = lo0 - padN, hi = hi0 + padN, span = hi - lo;
+  const W = window.innerWidth < 560 ? 380 : 640, P = 26, X = x => P + (x - lo) / span * (W - 2 * P);
+  const placed = [], rowsEnd = [];
+  [...pins].sort((a, b) => a.x - b.x).forEach(p => {
+    const w = String(p.x).length * 9 + 18, x = X(p.x);
+    let r = 0; while (rowsEnd[r] != null && x - w / 2 < rowsEnd[r] + 4) r++;
+    rowsEnd[r] = x + w / 2; placed.push({ ...p, r, w, px: x });
+  });
+  const rows = Math.max(rowsEnd.length, value != null ? 1 : 0);
+  const axisY = 26 + rows * 30, H = axisY + 34;
+  const live = cond && cond.t.every(t => t[1]);
+  const f = x => evalCond(cond, { [v]: x });
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="number line" style="font-family:var(--sans)">`;
+  s += `<line x1="${P - 14}" y1="${axisY}" x2="${W - P + 14}" y2="${axisY}" stroke="#c9cfd6" stroke-width="2"/>`;
+  const step = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000].find(st => span / st <= 12);
+  for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) {
+    const near = ths.some(th => Math.abs(X(th) - X(t)) < 22 && th !== t);
+    s += `<line x1="${X(t)}" y1="${axisY - 5}" x2="${X(t)}" y2="${axisY + 5}" stroke="#c9cfd6" stroke-width="2"/>`;
+    if (!near && !ths.includes(t)) s += `<text x="${X(t)}" y="${axisY + 24}" text-anchor="middle" font-size="13" fill="#9aa1aa">${t}</text>`;
+  }
+  ths.forEach(t => { s += `<text x="${X(t)}" y="${axisY + 24}" text-anchor="middle" font-size="14" font-weight="700" fill="#16181d">${t}</text>`; });
+  if (live) {
+    const bps = [lo, ...ths.filter(t => t > lo && t < hi), hi];
+    for (let k = 0; k < bps.length - 1; k++) {
+      const a = bps[k], b = bps[k + 1];
+      if (f((a + b) / 2)) s += `<line x1="${X(a)}" y1="${axisY}" x2="${X(b)}" y2="${axisY}" stroke="#2f6bff" stroke-width="7"/>`;
+    }
+    if (f(lo - 1)) s += `<path d="M${X(lo) - 14} ${axisY} l12 -9 v18z" fill="#2f6bff"/>`;
+    if (f(hi + 1)) s += `<path d="M${X(hi) + 14} ${axisY} l-12 -9 v18z" fill="#2f6bff"/>`;
+    ths.forEach(t => {
+      const on = f(t), near = f(t - 0.01) || f(t + 0.01);
+      if (on) s += `<circle cx="${X(t)}" cy="${axisY}" r="8" fill="#2f6bff"/>`;
+      else if (near) s += `<circle cx="${X(t)}" cy="${axisY}" r="7" fill="#fff" stroke="#2f6bff" stroke-width="3"/>`;
+    });
+  }
+  if (value != null) {
+    const x = X(value), col = live ? (f(value) ? '#1f9d55' : '#e0484e') : '#16181d';
+    const label = `${v} = ${value}`, w = label.length * 8.4 + 18;
+    s += `<line x1="${x}" y1="${axisY - 12}" x2="${x}" y2="${axisY - 4}" stroke="${col}" stroke-width="2.5"/>`;
+    s += `<rect x="${x - w / 2}" y="${axisY - 38}" width="${w}" height="26" rx="8" fill="${col}"/>`;
+    s += `<text x="${x}" y="${axisY - 20}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" style="font-family:var(--mono)">${esc(label)}</text>`;
+  }
+  // stems first, labels second, so a tall stem never cuts through a lower label
+  let stems = '', heads = '';
+  placed.forEach(p => {
+    const col = p.state === 'ok' ? '#1f9d55' : p.state === 'bad' ? '#e0484e' : '#5d6570';
+    const y = axisY - 26 - p.r * 30;
+    stems += `<line x1="${p.px}" y1="${y + 12}" x2="${p.px}" y2="${axisY - 3}" stroke="${col}" stroke-width="2"/><circle cx="${p.px}" cy="${axisY}" r="4" fill="${col}"/>`;
+    heads += `<rect x="${p.px - p.w / 2}" y="${y - 12}" width="${p.w}" height="24" rx="12" fill="${col}" stroke="#f5f6f8" stroke-width="2"/>`;
+    heads += `<text x="${p.px}" y="${y + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${p.x}</text>`;
+  });
+  return s + stems + heads + '</svg>';
+}
+
+/* ---------- save, sound ---------- */
+const SAVE_KEY = 'week2.conditionals.v2';
+let save;
+try { save = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { save = null; }
+if (!save) save = { done: {}, best: {}, muted: false };
+const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+
+let actx;
+function tone(freq, dur = .12, vol = .05, type = 'sine', when = 0) {
+  if (save.muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + dur + .02);
+  } catch (e) {}
+}
+const sfxGood = () => { tone(784, .14); tone(1175, .22, .04, 'sine', .08); };
+const sfxBad = () => tone(196, .22, .05, 'triangle');
+const sfxWin = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, .045, 'sine', i * .09));
+const sfxTick = () => tone(880, .04, .02);
+
+/* ---------- footer: Check / feedback bar ---------- */
+function setFoot(mode, o = {}) {
+  foot.className = 'footer ' + mode;
+  const icon = mode === 'good' ? ICON.check : mode === 'bad' ? ICON.x : '';
+  foot.innerHTML = `<div class="in">
+    <div class="fb">${icon ? `<div class="fb-icon">${icon}</div>` : ''}${o.title ? `<div><div class="fb-title">${o.title}</div>${o.text ? `<div class="fb-text">${o.text}</div>` : ''}</div>` : ''}</div>
+    <div class="actions">${o.alt ? `<button class="btn-ghost" id="footAlt">${o.alt}</button>` : ''}${o.btn ? `<button class="btn-primary" id="footBtn"${o.disabled ? ' disabled' : ''}>${o.btn}</button>` : ''}</div>
+  </div>`;
+  if (o.btn) $('#footBtn').onclick = o.onClick;
+  if (o.alt) $('#footAlt').onclick = o.onAlt;
+}
+const hideFoot = () => { foot.className = 'footer hidden'; foot.innerHTML = ''; };
+const enableFoot = on => { const b = $('#footBtn'); if (b) b.disabled = !on; };
+
+function topbar(pct, right = '', timer = false) {
+  return `<div class="topbar"><div class="in">
+    <button class="iconbtn" onclick="course()" aria-label="Close lesson">${ICON.close}</button>
+    <div class="progress${timer ? ' timer' : ''}" id="progWrap"><div id="prog" style="width:${pct}%"></div></div>
+    <div class="topstat" id="topstat">${right}</div></div></div>`;
+}
+function leave() { animTok++; if (T && T.timer) { clearInterval(T.timer); T.timer = null; } window.scrollTo(0, 0); }
+
+/* =====================================================================
+   COURSE PAGE
+   ===================================================================== */
+const LESSONS = [
+  { id: 'truth', title: 'True or False?', desc: 'Read a condition the way Python does.', icon: ICON.truth, open: () => truthIntro() },
+  { id: 'gate', title: 'Rules into Code', desc: 'Turn “at least” and “under” into the right symbol.', icon: ICON.gate, open: () => gateIntro() },
+  { id: 'trace', title: 'Which Lines Run?', desc: 'if, if/else, elif chains and separate ifs.', icon: ICON.branch, open: () => traceIntro() },
+  { id: 'ladder', title: 'Ordering the Chain', desc: 'Put elif branches in an order that works.', icon: ICON.ladder, open: () => ladderIntro() },
+];
+const openLesson = id => LESSONS.find(l => l.id === id).open();
+
+function course() {
+  leave(); screen = 'course'; hideFoot();
+  const next = LESSONS.findIndex(l => !save.done[l.id]);
+  app.innerHTML = `<div class="page">
+    <div class="eyebrow">Week 2 · Python</div>
+    <h1>Conditionals</h1>
+    <p class="lede">How a program makes decisions. Four short lessons on reading and writing <code>if</code> statements the way Python does.</p>
+    ${LESSONS.map((l, i) => `
+      <div class="lesson${save.done[l.id] ? ' done' : ''}${i === next ? ' next' : ''}" onclick="openLesson('${l.id}')">
+        <div class="node">${l.icon}${save.done[l.id] ? `<span class="badge">${ICON.checkSm}</span>` : ''}</div>
+        <div><div class="lnum">Lesson ${i + 1}</div><h3>${l.title}</h3><p>${l.desc}</p></div>
+        <div class="meta">${i === next ? '<span class="startpill">Start</span>' : save.done[l.id] ? 'Review' : ''}</div>
+      </div>`).join('')}
+    <div class="section-title">Reference</div>
+    <details class="ref"><summary>Which shape do I need?</summary>
+      <div class="tablewrap" style="margin:0"><table class="t">
+        <tr><th>Shape</th><th>Sounds like</th><th>Branches that run</th></tr>
+        <tr><td class="mono">if</td><td>“If it's raining, take an umbrella.”</td><td>0 or 1</td></tr>
+        <tr><td class="mono">if / else</td><td>“17 or older, come in. Otherwise, go home.”</td><td>Exactly 1 of 2</td></tr>
+        <tr><td class="mono">if / elif / else</td><td>“A? No? B? No? C? No? Then F.”</td><td>Exactly 1: the first True one</td></tr>
+        <tr><td class="mono">if / elif</td><td>The same chain with no fallback.</td><td>0 or 1</td></tr>
+        <tr><td class="mono"><div>if</div><div>if</div></td><td>“Check each alarm on its own.”</td><td>Any number</td></tr>
+      </table></div>
+    </details>
+    <details class="ref"><summary>Comparison symbols</summary>
+      <div class="tablewrap" style="margin:0"><table class="t">
+        <tr><th>Symbol</th><th>Asks</th><th>English words</th><th>Example</th></tr>
+        <tr><td class="mono">==</td><td>Equal?</td><td>exactly, is</td><td>${cd('17 == 17')} True</td></tr>
+        <tr><td class="mono">!=</td><td>Not equal?</td><td>not, anything but</td><td>${cd('"rain" != "sun"')} True</td></tr>
+        <tr><td class="mono">&gt;</td><td>Greater than?</td><td>more than, over</td><td>${cd('17 > 17')} False</td></tr>
+        <tr><td class="mono">&lt;</td><td>Less than?</td><td>under, below</td><td>${cd('12 < 13')} True</td></tr>
+        <tr><td class="mono">&gt;=</td><td>Greater or equal?</td><td>at least, or more</td><td>${cd('17 >= 17')} True</td></tr>
+        <tr><td class="mono">&lt;=</td><td>Less or equal?</td><td>at most, no more than</td><td>${cd('20 <= 20')} True</td></tr>
+        <tr><td class="mono">=</td><td><i>Not a question</i></td><td>“store this”</td><td>${cd('age = 17')}</td></tr>
+      </table></div>
+    </details>
+    <div class="foot-links"><button class="linkbtn" onclick="toggleMute()">Sound: ${save.muted ? 'off' : 'on'}</button>
+      &nbsp;·&nbsp; <button class="linkbtn" id="resetLink" onclick="resetProgress()">Reset progress</button></div>
+  </div>`;
+}
+function toggleMute() { save.muted = !save.muted; persist(); course(); }
+let resetArmed = false;
+function resetProgress() {
+  const link = $('#resetLink');
+  if (!resetArmed) { resetArmed = true; link.textContent = 'Click again to clear all progress'; setTimeout(() => { resetArmed = false; if (link.isConnected) link.textContent = 'Reset progress'; }, 4000); return; }
+  resetArmed = false; save = { done: {}, best: {}, muted: save.muted }; persist(); course();
+}
+
+function introScreen({ icon, kicker, title, paras, code, btn = 'Start', onStart, alt, onAlt }) {
+  leave(); screen = 'intro';
+  app.innerHTML = topbar(0) + `<div class="stage introcard">
+    <div class="bigicon">${icon}</div>
+    <div class="kicker">${kicker}</div>
+    <h2>${title}</h2>
+    ${paras.map(p => `<p>${p}</p>`).join('')}
+    ${code ? codeBlock(code.lines, { id: 'ic', q: code.q ?? -1 }) : ''}
+  </div>`;
+  setFoot('idle', { btn, onClick: onStart, alt, onAlt });
+}
+
+function complete({ id, title = 'Lesson complete', sub, stats, again, extra = '' }) {
+  leave(); screen = 'done';
+  save.done[id] = true; persist(); sfxWin();
+  app.innerHTML = topbar(100) + `<div class="stage center">
+    <div class="bigcheck">${ICON.checkBig}</div>
+    <h2>${title}</h2>${sub ? `<p class="muted">${sub}</p>` : ''}
+    <div class="stats">${stats.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('')}</div>
+    ${extra}
+  </div>`;
+  setFoot('idle', { btn: 'Back to course', onClick: course, alt: 'Practice again', onAlt: again });
+}
+
+/* =====================================================================
+   LESSON 1: TRUE OR FALSE?
+   ===================================================================== */
+const WORDS = { '>': 'greater than', '<': 'less than', '>=': 'greater than or equal to', '<=': 'less than or equal to', '==': 'equal to', '!=': 'not equal to' };
+const OPS = ['==', '!=', '>', '<', '>=', '<='];
+const NUM_VARS = [
+  { n: 'age', th: [12, 13, 17, 18] }, { n: 'score', th: [70, 80, 90, 100] }, { n: 'lives', th: [0, 1, 3] },
+  { n: 'hp', th: [0, 25, 50] }, { n: 'coins', th: [10, 50, 100] }, { n: 'level', th: [5, 10, 20] }, { n: 'battery', th: [10, 20, 50] },
+];
+function explainNum(a, op, b, val) {
+  let s = `${cd(`${a} ${op} ${b}`)} asks: is ${a} ${WORDS[op]} ${b}? ${val ? 'Yes' : 'No'}, so the condition is <b>${pyBool(val)}</b>.`;
+  if (a === b && (op === '>' || op === '<')) s += ` Watch the edge: ${cd(op)} is strict, so being equal doesn't count. ${cd(op + '=')} would include it.`;
+  if (a === b && (op === '>=' || op === '<=')) s += ` The ${cd('=')} in ${cd(op)} is what lets “equal” count.`;
+  return s;
+}
+function genNum() {
+  const v = pick(NUM_VARS), th = pick(v.th), op = pick(OPS);
+  const val = Math.max(0, th + pick([-1, 0, 0, 0, 1, 1, -1, pick([-10, -3, 5, 12])]));
+  const r = cmp(val, op, th).val;
+  return { label: 'Comparison', lines: [`${v.n} = ${val}`], cond: `${v.n} ${op} ${th}`, sub: `${val} ${op} ${th}`,
+    answer: pyBool(r), pyOut: pyBool(r), explain: explainNum(val, op, th, r), vis: { type: 'line', v: v.n, cond: C(v.n, op, th), value: val } };
+}
+const PAIRS = [
+  [{ n: 'age', th: 12 }, { n: 'height', th: 120 }], [{ n: 'keys', th: 3 }, { n: 'level', th: 10 }],
+  [{ n: 'score', th: 90 }, { n: 'bonus', th: 5 }], [{ n: 'coins', th: 50 }, { n: 'gems', th: 2 }],
+];
+function genCompound() {
+  const P = pick(PAIRS), j = pick(['and', 'or']);
+  const terms = P.map(v => ({ n: v.n, th: v.th, op: pick(['>=', '>=', '>', '<', '<=']), val: Math.max(0, v.th + pick([-1, 0, 1, -3, 4])) }));
+  const rs = terms.map(t => cmp(t.val, t.op, t.th).val);
+  const val = j === 'and' ? rs[0] && rs[1] : rs[0] || rs[1];
+  return {
+    label: 'and / or', lines: terms.map(t => `${t.n} = ${t.val}`),
+    cond: `${terms[0].n} ${terms[0].op} ${terms[0].th} ${j} ${terms[1].n} ${terms[1].op} ${terms[1].th}`,
+    sub: `${pyBool(rs[0])} ${j} ${pyBool(rs[1])}`, answer: pyBool(val), pyOut: pyBool(val),
+    explain: j === 'and' ? '<b>and</b> is True only when both sides are True.' : '<b>or</b> is True when at least one side is True.',
+    vis: { type: 'bool', j, a: rs[0], b: rs[1], result: val, terms: terms.map((t, i) => ({ text: `${t.n} ${t.op} ${t.th}`, sub: `${t.val} ${t.op} ${t.th}`, val: rs[i] })) },
+  };
+}
+const STRS = [
+  { n: 'password', target: 'admin123', vals: ['admin123', 'Admin123', 'admin 123', 'admin123', 'admin1234'] },
+  { n: 'username', target: 'mark_s', vals: ['mark_s', 'Mark_s', 'mark_s', 'mark s', 'helly_r'] },
+  { n: 'answer', target: 'yes', vals: ['yes', 'Yes', 'YES', 'yes', 'no'] },
+];
+function genString() {
+  const S = pick(STRS), val = pick(S.vals), op = pick(['==', '==', '!=']);
+  const r = cmp(val, op, S.target).val, same = val === S.target;
+  const why = same ? 'Every character matches.'
+    : val.toLowerCase() === S.target ? 'Capital letters count. To Python, <b>A</b> and <b>a</b> are different characters.'
+    : val.replace(/\s/g, '') === S.target ? 'Spaces count too. A space is a character.'
+    : 'Close isn\'t enough. Strings have to match character for character.';
+  const verdict = op === '==' ? (same ? 'They are equal.' : 'They are not equal.') : (same ? 'They are equal, so <code>!=</code> is False.' : 'They are different, so <code>!=</code> is True.');
+  return { label: 'Strings', lines: [`${S.n} = ${py(val)}`], cond: `${S.n} ${op} ${py(S.target)}`, sub: `${py(val)} ${op} ${py(S.target)}`,
+    answer: pyBool(r), pyOut: pyBool(r), explain: `${why} ${verdict}`, vis: { type: 'chars', name: S.n, val, target: S.target } };
+}
+const INPUTS = [{ n: 'age', th: 17, p: 'How old are you? ' }, { n: 'score', th: 90, p: 'Your score? ' }, { n: 'coins', th: 100, p: 'How many coins? ' }];
+function genInput() {
+  const v = pick(INPUTS), typed = v.th + pick([-1, 0, 1]), wrapped = Math.random() < 0.3;
+  const op = pick(['>=', '>=', '>', '<', '==', '!=']);
+  const val = wrapped ? typed : String(typed);
+  const r = cmp(val, op, v.th);
+  const line = wrapped ? `${v.n} = int(input("${v.p}"))  # they type ${typed}` : `${v.n} = input("${v.p}")  # they type ${typed}`;
+  const q = { label: 'input()', lines: [line], cond: `${v.n} ${op} ${v.th}`, sub: `${py(val)} ${op} ${v.th}`,
+    vis: { type: 'types', name: v.n, typed, wrapped, op, th: v.th, crash: !!r.crash } };
+  if (r.crash) return { ...q, answer: 'Error', pyOut: `TypeError: '${op}' not supported between instances of 'str' and 'int'`,
+    explain: `${cd('input()')} always gives back text. Python can't say whether text is ${WORDS[op]} a number, so it stops with an error. Wrapping it as ${cd('int(input(...))')} fixes this.` };
+  if (!wrapped) return { ...q, answer: pyBool(r.val), pyOut: pyBool(r.val),
+    explain: `${v.n} holds the text ${cd(py(val))}, not the number ${typed}. Text is never equal to a number, so ${cd('==')} gives False and ${cd('!=')} gives True. There's no error, which makes this bug easy to miss.` };
+  return { ...q, sub: `${typed} ${op} ${v.th}`, answer: pyBool(r.val), pyOut: pyBool(r.val),
+    explain: `${cd('int()')} turned the text into a number first, so the comparison works normally. ${explainNum(typed, op, v.th, r.val)}` };
+}
+function genAssign() {
+  const v = pick(NUM_VARS), val = pick(v.th);
+  return { label: 'Careful', lines: [`${v.n} = ${val}`], cond: `${v.n} = ${val}`, sub: null, answer: 'Error',
+    pyOut: `SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?`,
+    explain: `A single ${cd('=')} stores a value. It doesn't ask anything, so Python refuses to run an ${cd('if')} built on it.`,
+    vis: { type: 'assign', name: v.n, val } };
+}
+const GEN = { num: genNum, compound: genCompound, string: genString, input: genInput, assign: genAssign };
+function genTruth() {
+  const r = Math.random();
+  return r < .42 ? genNum() : r < .62 ? genCompound() : r < .78 ? genString() : r < .94 ? genInput() : genAssign();
+}
+
+function visual(q) {
+  const v = q.vis;
+  if (v.type === 'line') return `<div class="vis">${numberLine({ v: v.v, cond: v.cond, value: v.value })}
+    <div class="cap">The blue part is every number that makes ${cd(condText(v.cond))} True. A filled dot means that number counts, a hollow dot means it doesn't.</div></div>`;
+  if (v.type === 'chars') {
+    const n = Math.max(v.val.length, v.target.length);
+    const row = (lab, s, o) => `<div class="tilerow"><span class="lab">${lab}</span><div class="tiles">${Array.from({ length: n }, (_, i) => {
+      const ch = s[i]; if (ch === undefined) return '<div class="tile empty"></div>';
+      return `<div class="tile${ch !== o[i] ? ' bad' : ''}">${ch === ' ' ? '␣' : esc(ch)}</div>`; }).join('')}</div></div>`;
+    return `<div class="vis">${row(v.name, v.val, v.target)}${row('compared to', v.target, v.val)}
+      <div class="cap">${v.val === v.target ? 'Same characters in the same places.' : 'Red tiles are where the strings differ. One different character is enough.'}</div></div>`;
+  }
+  if (v.type === 'types') {
+    if (v.wrapped) return `<div class="vis"><div class="vals">
+        <div class="val str"><b>"${v.typed}"</b><span>str · text</span></div><span class="op">→ int() →</span>
+        <div class="val int"><b>${v.typed}</b><span>int · number</span></div></div>
+      ${numberLine({ v: v.name, cond: C(v.name, v.op, v.th), value: v.typed })}</div>`;
+    return `<div class="vis"><div class="vals">
+        <div class="val str"><b>"${v.typed}"</b><span>str · text</span></div><span class="op">${esc(v.op)}</span>
+        <div class="val int"><b>${v.th}</b><span>int · number</span></div></div>
+      <div class="cap">${v.crash ? 'Text and numbers can\'t be put in order, so Python raises a TypeError.' : 'Different types are never equal, even when they look the same.'}</div></div>`;
+  }
+  if (v.type === 'bool') {
+    const rows = [[true, true], [true, false], [false, true], [false, false]];
+    const res = (a, b) => v.j === 'and' ? a && b : a || b;
+    return `<div class="vis">${v.terms.map(t => `<div style="margin:4px 0">${cd(t.text)} → ${cd(t.sub)} → ${boolChip(pyBool(t.val))}</div>`).join('')}
+      <table class="tt"><tr><th>left</th><th>right</th><th>left ${v.j} right</th></tr>
+      ${rows.map(([a, b]) => `<tr class="${a === v.a && b === v.b ? 'hit' : ''}"><td>${pyBool(a)}</td><td>${pyBool(b)}</td><td>${pyBool(res(a, b))}</td></tr>`).join('')}</table>
+      <div class="cap">The highlighted row is this question.</div></div>`;
+  }
+  if (v.type === 'assign') return `<div class="vis twocol">
+      <div><b>=</b>Stores a value.<br>${cd(`${v.name} = ${v.val}`)} puts ${v.val} into ${v.name}.</div>
+      <div><b>==</b>Asks a question.<br>${cd(`${v.name} == ${v.val}`)} answers True or False.</div></div>`;
+  return '';
+}
+
+let T = null;
+function truthIntro() {
+  introScreen({ icon: ICON.truth, kicker: 'Lesson 1', title: 'True or False?',
+    paras: ['Every <code>if</code> asks a yes-or-no question. Python answers it with <b>True</b> or <b>False</b>, or stops with an <b>error</b> if the question doesn\'t make sense.',
+      'For each one, decide what Python thinks of the highlighted line.'],
+    code: { lines: ['age = 17', 'if age >= 17:', '    print("Welcome")'], q: 1 },
+    btn: 'Start', onStart: startTruth, alt: 'Speed run (60s)', onAlt: startSpeed });
+}
+function startTruth() {
+  leave(); screen = 'truth';
+  const plan = shuffle(['num', 'num', 'num', 'num', 'compound', 'compound', 'string', 'string', 'input', 'input', 'input', 'assign']);
+  T = { mode: 'practice', queue: plan.map(k => GEN[k]()), i: 0, right: 0, firstRight: 0, sel: null, checked: false, misses: [] };
+  renderTruth();
+}
+function truthChoices(handler) {
+  return `<div class="choices row3" id="tChoices">${['True', 'False', 'Error'].map(c =>
+    `<button class="choice center" data-c="${c}" onclick="${handler}('${c}')"><span>${c}${c === 'Error' ? '<span class="sub">Python stops</span>' : ''}</span></button>`).join('')}</div>`;
+}
+function renderTruth() {
+  const q = T.queue[T.i]; T.sel = null; T.checked = false;
+  const lines = [...q.lines, `if ${q.cond}:`];
+  app.innerHTML = topbar(T.i / T.queue.length * 100, `${T.i + 1} / ${T.queue.length}`) + `<div class="stage">
+    <div class="kicker">${q.label}${q.again ? ' · second try' : ''}</div>
+    <div class="prompt">Is the condition on line ${lines.length} True or False?</div>
+    ${codeBlock(lines, { id: 'tq', q: lines.length - 1 })}
+    ${truthChoices('pickTruth')}
+    <div id="tExplain"></div></div>`;
+  setFoot('idle', { btn: 'Check', disabled: true, onClick: checkTruth });
+  window.scrollTo(0, 0);
+}
+function pickTruth(c) {
+  if (T.checked) return;
+  T.sel = c; $$('#tChoices .choice').forEach(b => b.classList.toggle('sel', b.dataset.c === c)); enableFoot(true);
+}
+function explainCard(q, ok) {
+  return `<div class="explain"><div class="hd">${ok ? 'Why' : 'Explanation'}</div>
+    <div class="evalline">${q.sub ? `${hl(q.cond)} → ${hl(q.sub)} → ` : ''}${q.answer === 'Error' ? `<span class="bool Error">${esc(q.pyOut.split(':')[0])}</span>` : boolChip(q.answer)}</div>
+    ${q.answer === 'Error' ? `<p class="muted" style="font:14px var(--mono)">${esc(q.pyOut)}</p>` : ''}
+    ${visual(q)}<p>${q.explain}</p></div>`;
+}
+function markTruthChoices(q, sel) {
+  $$('#tChoices .choice').forEach(b => {
+    b.classList.add('locked'); b.classList.remove('sel');
+    if (b.dataset.c === q.answer) b.classList.add('right'); else if (b.dataset.c === sel) b.classList.add('wrong');
+  });
+}
+function checkTruth() {
+  if (!T.sel || T.checked) return;
+  T.checked = true;
+  const q = T.queue[T.i], ok = T.sel === q.answer;
+  markTruthChoices(q, T.sel);
+  $('#tExplain').innerHTML = explainCard(q, ok);
+  if (ok) { T.right++; if (!q.again) T.firstRight++; sfxGood(); }
+  else {
+    sfxBad(); T.misses.push({ q, choice: T.sel });
+    if (!q.again) T.queue.splice(Math.min(T.i + 3, T.queue.length), 0, { ...q, again: true });
+  }
+  setFoot(ok ? 'good' : 'bad', { title: ok ? 'Correct' : 'Not quite', text: ok ? '' : (q.again ? `The answer is ${q.answer}.` : `The answer is ${q.answer}. You'll see this one again.`),
+    btn: 'Continue', onClick: nextTruth });
+}
+function nextTruth() {
+  T.i++;
+  if (T.i >= T.queue.length) {
+    const firstTotal = T.queue.filter(q => !q.again).length;
+    return complete({ id: 'truth', sub: 'Questions you missed came back once more.', again: startTruth,
+      stats: [['right first time', `${T.firstRight}/${firstTotal}`], ['questions', T.queue.length]] });
+  }
+  renderTruth();
+}
+
+// speed run: tap to answer, 60 seconds, streak multiplier
+function startSpeed() {
+  leave(); screen = 'speed';
+  T = { mode: 'speed', time: 60, score: 0, streak: 0, bestStreak: 0, n: 0, right: 0, misses: [], paused: false, locked: false, waiting: false, prev: '' };
+  T.timer = setInterval(tickSpeed, 1000);
+  hideFoot(); nextSpeed();
+}
+const mult = () => 1 + Math.floor(T.streak / 5);
+function hudSpeed() {
+  $('#prog').style.width = (T.time / 60 * 100) + '%';
+  $('#progWrap').classList.toggle('low', T.time <= 10);
+  $('#topstat').textContent = `${T.score} pts`;
+}
+function tickSpeed() { if (screen !== 'speed' || T.paused) return; T.time--; hudSpeed(); if (T.time <= 0) endSpeed(); }
+function nextSpeed() {
+  let q, key; do { q = genTruth(); key = q.lines.join('|') + q.cond; } while (key === T.prev);
+  T.prev = key; T.q = q; T.locked = false; T.waiting = false;
+  const lines = [...q.lines, `if ${q.cond}:`];
+  app.innerHTML = topbar(T.time / 60 * 100, `${T.score} pts`, true) + `<div class="stage">
+    <div class="kicker">${q.label}${T.streak >= 5 ? ` · streak ${T.streak}, points ×${mult()}` : ''}</div>
+    <div class="prompt">True, False, or Error?</div>
+    ${codeBlock(lines, { id: 'tq', q: lines.length - 1 })}
+    ${truthChoices('answerSpeed')}
+    <div id="tExplain"></div></div>`;
+  hudSpeed(); hideFoot(); window.scrollTo(0, 0);
+}
+function answerSpeed(c) {
+  if (screen !== 'speed' || T.locked) return;
+  T.locked = true; T.n++;
+  const q = T.q, ok = c === q.answer;
+  markTruthChoices(q, c);
+  if (ok) {
+    T.right++; T.streak++; T.bestStreak = Math.max(T.bestStreak, T.streak); T.score += 10 * mult(); sfxGood(); hudSpeed();
+    setTimeout(() => { if (screen === 'speed' && T.time > 0) nextSpeed(); }, 450);
+  } else {
+    T.streak = 0; T.paused = true; T.waiting = true; sfxBad(); T.misses.push({ q, choice: c });
+    $('#tExplain').innerHTML = explainCard(q, false);
+    setFoot('bad', { title: 'Not quite', text: 'The clock is paused while you read.', btn: 'Continue', onClick: contSpeed });
+  }
+}
+function contSpeed() { if (!T.waiting) return; T.paused = false; if (T.time <= 0) return endSpeed(); nextSpeed(); }
+function endSpeed() {
+  if (!(save.best.speed >= T.score)) { save.best.speed = T.score; persist(); }
+  const review = T.misses.length ? `<div class="review"><div class="section-title" style="margin-top:0">Review</div>${T.misses.map(m => `
+    <div class="item">${codeBlock([...m.q.lines, `if ${m.q.cond}:`], { id: 'rv', q: m.q.lines.length })}
+    <p>You said <b>${m.choice}</b>. Python says <b>${m.q.answer}</b>. ${m.q.explain}</p></div>`).join('')}</div>` : '';
+  complete({ id: 'truth', title: 'Time', sub: `Best speed run so far: ${save.best.speed} points`, again: startSpeed, extra: review,
+    stats: [['points', T.score], ['correct', `${T.right}/${T.n}`], ['best streak', T.bestStreak]] });
+}
+
+/* =====================================================================
+   LESSON 2: RULES INTO CODE
+   ===================================================================== */
+const GATES = [
+  { rule: 'Riders must be <b>at least</b> 12 years old.', terms: [['age', 12]], ans: ['>='], tests: [{ age: 11 }, { age: 12 }, { age: 13 }], yes: 'Ride!', no: 'Turned away' },
+  { rule: 'Only kids <b>under</b> 13 can order from the kids\' menu.', terms: [['age', 13]], ans: ['<'], tests: [{ age: 12 }, { age: 13 }, { age: 14 }], yes: 'Kids menu', no: 'Regular menu' },
+  { rule: 'You need <b>more than</b> 100 coins to buy the sword.', terms: [['coins', 100]], ans: ['>'], tests: [{ coins: 99 }, { coins: 100 }, { coins: 101 }], yes: 'Sword bought', no: 'Not enough coins' },
+  { rule: 'Your backpack holds <b>at most</b> 20 items.', terms: [['items', 20]], ans: ['<='], tests: [{ items: 19 }, { items: 20 }, { items: 21 }], yes: 'It fits', no: 'Backpack full' },
+  { rule: 'The safe opens only if the code is <b>exactly</b> 4321.', terms: [['code', 4321]], ans: ['=='], tests: [{ code: 4320 }, { code: 4321 }, { code: 1234 }], yes: 'Safe opens', no: 'Still locked' },
+  { rule: 'Anyone who is <b>not</b> "mark_s" sets off the alarm.', terms: [['username', 'mark_s']], ans: ['!='], tests: [{ username: 'mark_s' }, { username: 'helly_r' }, { username: 'Mark_s' }], yes: 'ALARM', no: 'All quiet' },
+  { rule: 'It\'s game over when lives hit 0 <b>or drop below</b> it.', terms: [['lives', 0]], ans: ['<='], tests: [{ lives: 1 }, { lives: 0 }, { lives: -1 }], yes: 'Game over', no: 'Keep playing' },
+  { rule: 'Riders must be <b>at least</b> 12 years old <b>and</b> <b>at least</b> 120 cm tall.', terms: [['age', 12], ['height', 120]], ans: ['>=', 'and', '>='],
+    tests: [{ age: 11, height: 130 }, { age: 12, height: 120 }, { age: 15, height: 119 }, { age: 13, height: 140 }], yes: 'Ride!', no: 'Turned away' },
+  { rule: 'Kids <b>under</b> 5 <b>or</b> seniors 65 <b>and older</b> get in free.', terms: [['age', 5], ['age', 65]], ans: ['<', 'or', '>='],
+    tests: [{ age: 3 }, { age: 5 }, { age: 30 }, { age: 64 }, { age: 65 }, { age: 80 }], yes: 'Free entry', no: 'Pay $10' },
+  { rule: 'The boss door opens with <b>at least</b> 3 keys <b>and</b> a level <b>higher than</b> 10.', terms: [['keys', 3], ['level', 10]], ans: ['>=', 'and', '>'],
+    tests: [{ keys: 3, level: 11 }, { keys: 2, level: 15 }, { keys: 3, level: 10 }, { keys: 5, level: 20 }], yes: 'Door opens', no: 'Door stays shut' },
+];
+const kinds = pz => pz.terms.length === 2 ? ['op', 'join', 'op'] : ['op'];
+const gateCond = (pz, f) => pz.terms.length === 2
+  ? C2(pz.terms[0][0], f[0], pz.terms[0][1], f[1], pz.terms[1][0], f[2], pz.terms[1][1])
+  : C(pz.terms[0][0], f[0], pz.terms[0][1]);
+const onLine = pz => pz.terms.every(t => typeof t[1] === 'number') && new Set(pz.terms.map(t => t[0])).size === 1;
+
+let G = null;
+function gateIntro() {
+  introScreen({ icon: ICON.gate, kicker: 'Lesson 2', title: 'Rules into Code',
+    paras: ['Rules are written in words. Code needs symbols. “At least 12” means 12 itself is allowed, so it becomes <code>&gt;=</code>.',
+      'Fill in the blanks, then check whether every visitor gets the right result.'],
+    code: { lines: ['if age >= 12:', '    print("Ride!")'] }, onStart: startGate });
+}
+function startGate() { leave(); screen = 'gate'; G = { i: 0, firstTry: 0 }; loadGate(); }
+function loadGate() {
+  G.fill = kinds(GATES[G.i]).map(() => null); G.active = 0; G.tries = 0; G.revealed = false; G.result = null;
+  renderGate(); window.scrollTo(0, 0);
+}
+function renderGate() {
+  const pz = GATES[G.i], K = kinds(pz), full = G.fill.every(Boolean);
+  const slot = k => `<span class="slot${G.active === k && !G.result ? ' active' : ''}${G.fill[k] ? ' filled' : ''}" onclick="selSlot(${k})">${G.fill[k] ? esc(G.fill[k]) : '?'}</span>`;
+  const [t0, t1] = pz.terms;
+  let ifLine = `<span class="k">if</span> ${t0[0]} ${slot(0)} ${hl(py(t0[1]))}`;
+  if (t1) ifLine += ` ${slot(1)} ${t1[0]} ${slot(2)} ${hl(py(t1[1]))}`;
+  ifLine += ':';
+  const mine = full ? gateCond(pz, G.fill) : null, right = gateCond(pz, pz.ans);
+  const opts = K[G.active] === 'join' ? ['and', 'or'] : OPS;
+  const line = onLine(pz) ? `<div class="vis">${numberLine({ v: t0[0], cond: mine || { t: pz.terms.map(t => [t0[0], null, t[1]]) },
+      pins: pz.tests.map(t => ({ x: t[t0[0]], state: G.result ? (evalCond(mine, t) === evalCond(right, t) ? 'ok' : 'bad') : 'neutral' })) })}
+      <div class="cap">${full ? `Blue shows every ${t0[0]} your condition lets through.` : 'Pick a symbol to see which values it lets through.'} The pins are the visitors.</div></div>` : '';
+  app.innerHTML = topbar(G.i / GATES.length * 100, `${G.i + 1} / ${GATES.length}`) + `<div class="stage">
+    <div class="kicker">Rule ${G.i + 1}</div>
+    <div class="prompt">Fill in the blanks so the code follows the rule.</div>
+    <div class="rule">${pz.rule}</div>
+    ${codeBlock([ifLine, hl(`    print("${pz.yes}")`), hl('else:'), hl(`    print("${pz.no}")`)], { id: 'gc', raw: true })}
+    ${G.result ? '' : `<div class="keys">${opts.map(o => `<button class="key" data-v="${esc(o)}" onclick="fillSlot(this.dataset.v)">${esc(o)}</button>`).join('')}</div>
+    <div class="hints"><span>at least <b>&gt;=</b></span><span>at most <b>&lt;=</b></span><span>more than <b>&gt;</b></span><span>under <b>&lt;</b></span><span>exactly <b>==</b></span><span>not <b>!=</b></span><span>both <b>and</b></span><span>either <b>or</b></span></div>`}
+    ${line}
+    <div class="tablewrap"><table class="t"><tr><th>Visitor</th><th>Should get</th><th>Your code gives</th></tr>
+      ${pz.tests.map(t => {
+        const want = evalCond(right, t);
+        let res = '<span class="pending">?</span>';
+        if (G.result) { const got = evalCond(mine, t); res = `<span class="${got === want ? 'ok' : 'no'}">${got ? pz.yes : pz.no}</span>`; }
+        return `<tr><td class="mono">${envCell(t)}</td><td>${want ? pz.yes : pz.no}</td><td>${res}</td></tr>`; }).join('')}
+    </table></div></div>`;
+  if (!G.result) setFoot('idle', { btn: 'Check', disabled: !full, onClick: checkGate });
+}
+function selSlot(k) { if (G.result) return; G.active = k; renderGate(); }
+function fillSlot(v) {
+  if (G.result) return;
+  const K = kinds(GATES[G.i]);
+  if ((K[G.active] === 'join') !== (v === 'and' || v === 'or')) return;
+  G.fill[G.active] = v; sfxTick();
+  const nextEmpty = G.fill.findIndex(x => !x);
+  if (nextEmpty >= 0) G.active = nextEmpty;
+  renderGate();
+}
+function checkGate() {
+  if (!G.fill.every(Boolean)) return;
+  const pz = GATES[G.i], mine = gateCond(pz, G.fill), right = gateCond(pz, pz.ans);
+  const bad = pz.tests.find(t => evalCond(mine, t) !== evalCond(right, t));
+  G.result = bad ? 'bad' : 'good';
+  renderGate();
+  if (!bad) {
+    if (G.tries === 0 && !G.revealed) G.firstTry++;
+    sfxGood();
+    setFoot('good', { title: 'Correct', text: 'Every visitor gets the right result.', btn: 'Continue', onClick: nextGate });
+  } else {
+    G.tries++; sfxBad();
+    const got = evalCond(mine, bad);
+    setFoot('bad', { title: 'Not quite',
+      text: `With ${cd(envText(bad))}, ${cd(condSub(mine, bad))} is ${pyBool(got)}, so they get “${got ? pz.yes : pz.no}”.`,
+      btn: 'Try again', onClick: () => { G.result = null; renderGate(); },
+      alt: G.tries >= 2 ? 'Show answer' : null, onAlt: () => { G.fill = [...pz.ans]; G.revealed = true; G.result = null; renderGate(); } });
+  }
+}
+function nextGate() {
+  G.i++;
+  if (G.i >= GATES.length) {
+    if (!(save.best.gate >= G.firstTry)) { save.best.gate = G.firstTry; persist(); }
+    return complete({ id: 'gate', again: startGate, stats: [['rules', GATES.length], ['right first time', `${G.firstTry}/${GATES.length}`]] });
+  }
+  loadGate();
+}
+
+/* =====================================================================
+   LESSON 3: WHICH LINES RUN?
+   ===================================================================== */
+const TRACE = [
+  { name: 'Grade ladder', tag: 'if / elif / else', vars: { score: [95, 90, 89, 80, 79, 70, 69, 42] },
+    blocks: [[[C('score', '>=', 90), 'A'], [C('score', '>=', 80), 'B'], [C('score', '>=', 70), 'C'], [null, 'F']]],
+    lesson: 'An if / elif / else chain is one decision. Python checks from the top, runs the first branch that is True, and skips the rest. Exactly one line prints.' },
+  { name: 'Upside-down ladder', tag: 'order matters', vars: { score: [95, 85, 75, 50] },
+    blocks: [[[C('score', '>=', 70), 'C'], [C('score', '>=', 80), 'B'], [C('score', '>=', 90), 'A'], [null, 'F']]],
+    lesson: 'The chain stops at the first True. A 95 passes <code>score &gt;= 70</code>, so it prints C and never reaches the A check. With <code>&gt;=</code>, the biggest number has to go first.' },
+  { name: 'Three separate ifs', tag: 'if, if, if', vars: { score: [95, 85, 75, 50] },
+    blocks: [[[C('score', '>=', 90), 'A']], [[C('score', '>=', 80), 'B']], [[C('score', '>=', 70), 'C']]],
+    lesson: 'Three separate ifs are three separate questions. Each one is checked, so several can print. Use elif when only one should win.' },
+  { name: 'The bouncer', tag: 'if / else', vars: { age: [15, 16, 17, 18, 25] },
+    blocks: [[[C('age', '>=', 17), 'Come on in.'], [null, 'Come back in a few years.']]], after: ['Next!'],
+    lesson: 'if / else is a fork: exactly one side runs. The last <code>print</code> isn\'t indented, so it isn\'t part of the if and always runs.' },
+  { name: 'An if on its own', tag: 'if (no else)', vars: { age: [16, 17, 18] },
+    blocks: [[[C('age', '>=', 17), 'Here is your M-rated game.']]],
+    lesson: 'An if with no else has no fallback. When the condition is False, nothing happens at all.' },
+  { name: 'Theme park', tag: 'and', vars: { age: [11, 12, 14], height: [115, 120, 135] },
+    blocks: [[[C2('age', '>=', 12, 'and', 'height', '>=', 120), 'Strapping in!'], [null, 'Not safe yet.']]],
+    lesson: '<b>and</b> needs both sides True. One False makes the whole condition False.' },
+  { name: 'Leaky theme park', tag: 'or', vars: { age: [8, 11, 12, 14], height: [110, 120, 135] },
+    blocks: [[[C2('age', '>=', 12, 'or', 'height', '>=', 120), 'Strapping in!'], [null, 'Not safe yet.']]],
+    lesson: '<b>or</b> only needs one side True, which is why this park lets a tall 8-year-old on. The safety rule needed <b>and</b>.' },
+  { name: 'Battery check', tag: 'elif with <', vars: { battery: [5, 9, 10, 25, 30, 80] },
+    blocks: [[[C('battery', '<', 10), 'Critical!'], [C('battery', '<', 30), 'Low battery'], [null, 'All good']]],
+    lesson: 'With <code>&lt;</code> the smallest number goes first. And <code>10 &lt; 10</code> is False, so 10% counts as Low, not Critical.' },
+  { name: 'Double alarm', tag: 'separate ifs', vars: { battery: [5, 25, 80] },
+    blocks: [[[C('battery', '<', 30), 'Low battery']], [[C('battery', '<', 10), 'Critical!']]],
+    lesson: 'Two separate ifs, so a phone at 5% sets off both. For one message, make it a single chain with elif and put Critical first.' },
+  { name: 'The vault', tag: 'and + elif', vars: { username: ['mark_s', 'helly_r', 'Mark_s'], password: ['lumon', 'lumen'] },
+    blocks: [[[C2('username', '==', 'mark_s', 'and', 'password', '==', 'lumon'), 'Welcome to the severed floor.'], [C('username', '==', 'mark_s'), 'Incorrect password, Mark.'], [null, 'Sounding alarm.']]],
+    lesson: 'Strings must match exactly, capitals included, so "Mark_s" counts as a stranger. The most specific check (both right) goes first.' },
+  { name: 'Health bar', tag: '== and <=', vars: { hp: [0, 1, 25, 26, 100] },
+    blocks: [[[C('hp', '==', 0), 'Game Over'], [C('hp', '<=', 25), 'Danger!'], [null, 'Fighting']]],
+    lesson: '<code>==</code> asks about one exact value. <code>&lt;=</code> includes the number itself, so 25 HP is still Danger.' },
+  { name: 'Weather check', tag: '!=', vars: { weather: ['rain', 'sun', 'Rain', 'snow'] },
+    blocks: [[[C('weather', '!=', 'rain'), 'Go outside!'], [null, 'Stay in.']]],
+    lesson: '<code>!=</code> means not equal. It\'s True for everything except exactly "rain", and "Rain" with a capital R is a different string.' },
+  { name: 'Shop trip', tag: 'if/else + if', vars: { coins: [30, 50, 99, 100, 150] },
+    blocks: [[[C('coins', '>=', 100), 'Bought the sword'], [null, 'Too poor for the sword']], [[C('coins', '>=', 50), 'Bought a potion']]],
+    lesson: 'Two separate decisions. The if/else always prints one of its lines, then the next if is a new question that gets checked regardless.' },
+];
+function buildProgram(tpl, env) {
+  const lines = Object.entries(env).map(([k, v]) => `${k} = ${py(v)}`);
+  lines.push('');
+  const refs = tpl.blocks.map((blk, bi) => {
+    if (bi > 0) lines.push('');
+    return blk.map(([c, out], i) => {
+      const condLine = lines.length;
+      lines.push(c ? `${i === 0 ? 'if' : 'elif'} ${condText(c)}:` : 'else:');
+      const printLine = lines.length;
+      lines.push(`    print("${out}")`);
+      return { c, out, condLine, printLine };
+    });
+  });
+  if (tpl.after) lines.push('');
+  const after = (tpl.after || []).map(out => { const line = lines.length; lines.push(`print("${out}")`); return { out, line }; });
+  return { lines, refs, after };
+}
+function traceSteps(P, env) {
+  const steps = [], outs = [];
+  P.refs.forEach(blk => {
+    let done = false;
+    blk.forEach(br => {
+      if (done) { steps.push({ cond: br.condLine, print: br.printLine, st: 'skip', note: 'skipped' }); return; }
+      if (br.c) {
+        const v = evalCond(br.c, env);
+        steps.push({ cond: br.condLine, print: br.printLine, st: v ? 'true' : 'false', note: `${condSub(br.c, env)} → ${pyBool(v)}`, out: br.out });
+        if (v) { outs.push(br.out); done = true; }
+      } else {
+        steps.push({ cond: br.condLine, print: br.printLine, st: 'true', note: 'nothing above was True', out: br.out });
+        outs.push(br.out); done = true;
+      }
+    });
+  });
+  P.after.forEach(a => { steps.push({ cond: null, print: a.line, st: 'true', note: 'always runs', out: a.out }); outs.push(a.out); });
+  return { steps, outs };
+}
+
+let W = null;
+function traceIntro() {
+  introScreen({ icon: ICON.branch, kicker: 'Lesson 3', title: 'Which Lines Run?',
+    paras: ['Python reads from top to bottom. In an <code>if / elif / else</code> chain it stops at the <b>first</b> True condition. Separate <code>if</code>s are each checked on their own.',
+      'Predict what prints, then watch Python step through it.'],
+    code: { lines: ['if score >= 90:', '    print("A")', 'elif score >= 80:', '    print("B")'] }, onStart: startTrace });
+}
+function startTrace() {
+  leave(); screen = 'trace';
+  const core = TRACE.slice(0, 3), rest = shuffle(TRACE.slice(3)).slice(0, 5);
+  W = { i: 0, total: 8, right: 0, list: shuffle([...core, ...rest]) };
+  loadTrace();
+}
+function loadTrace() {
+  const tpl = W.list[W.i];
+  const env = Object.fromEntries(Object.entries(tpl.vars).map(([k, vals]) => [k, pick(vals)]));
+  const P = buildProgram(tpl, env);
+  const opts = [...new Set([...tpl.blocks.flat().map(b => b[1]), ...(tpl.after || [])])];
+  W.cur = { tpl, env, P, opts }; W.busy = false; W.done = false;
+  app.innerHTML = topbar(W.i / W.total * 100, `${W.i + 1} / ${W.total}`) + `<div class="stage">
+    <div class="kicker">${esc(tpl.tag)}</div>
+    <div class="prompt">What does this program print? Select everything that prints.</div>
+    ${codeBlock(P.lines, { id: 'wl' })}
+    <div class="choices" id="wChoices">
+      ${opts.map(o => `<button class="choice" data-o="${esc(o)}" onclick="toggleOut(this)"><span class="box">${ICON.checkSm}</span><span class="mono">${esc(o)}</span></button>`).join('')}
+      <button class="choice" id="noneChoice" onclick="toggleNone(this)"><span class="box">${ICON.checkSm}</span><span>Nothing prints</span></button>
+    </div>
+    <div id="wOut" style="margin-top:20px"></div></div>`;
+  setFoot('idle', { btn: 'Check', disabled: true, onClick: runTrace });
+  window.scrollTo(0, 0);
+}
+const traceSel = () => $$('#wChoices .choice.sel[data-o]').map(c => c.dataset.o);
+function toggleOut(el) { if (W.busy || W.done) return; el.classList.toggle('sel'); $('#noneChoice').classList.remove('sel'); enableFoot(traceSel().length > 0); }
+function toggleNone(el) {
+  if (W.busy || W.done) return;
+  const on = !el.classList.contains('sel'); $$('#wChoices .choice').forEach(c => c.classList.remove('sel'));
+  if (on) el.classList.add('sel'); enableFoot(on);
+}
+async function runTrace() {
+  if (W.busy || W.done) return;
+  const sel = traceSel(), none = $('#noneChoice').classList.contains('sel');
+  if (!sel.length && !none) return;
+  W.busy = true; const tok = animTok;
+  $$('#wChoices .choice').forEach(c => c.classList.add('locked'));
+  setFoot('idle', { title: 'Running…', btn: 'Check', disabled: true });
+  const { P, env, tpl } = W.cur;
+  const { steps, outs } = traceSteps(P, env);
+  $('#wOut').innerHTML = `<div class="output"><div class="hd">Output</div><div class="bd" id="conOut"></div></div>`;
+  const line = i => $('#wl' + i);
+  const addTag = (el, cls, text) => el.insertAdjacentHTML('beforeend', `<span class="tag ${cls}">${esc(text)}</span>`);
+  for (const s of steps) {
+    if (tok !== animTok) return;
+    if (s.cond != null) {
+      const el = line(s.cond);
+      if (s.st === 'skip') { el.classList.add('dim'); line(s.print).classList.add('dim'); addTag(el, 's', s.note); await sleep(300); continue; }
+      el.classList.add('cur'); await sleep(420); if (tok !== animTok) return;
+      el.classList.remove('cur'); el.classList.add(s.st); addTag(el, s.st === 'true' ? 't' : 'f', s.note);
+      s.st === 'true' ? tone(660, .06, .03) : tone(330, .06, .03);
+      await sleep(320); if (tok !== animTok) return;
+    }
+    const pl = line(s.print);
+    if (s.st === 'true') {
+      pl.classList.add('run'); if (s.cond == null) addTag(pl, 'r', s.note);
+      $('#conOut').insertAdjacentHTML('beforeend', `<div>${esc(s.out)}</div>`); tone(880, .05, .03);
+      await sleep(380);
+    } else pl.classList.add('dim');
+  }
+  if (tok !== animTok) return;
+  if (!outs.length) $('#conOut').innerHTML = '<span class="muted">(nothing printed)</span>';
+  const ok = none ? outs.length === 0 : (sel.length === outs.length && sel.every(o => outs.includes(o)));
+  W.busy = false; W.done = true;
+  $$('#wChoices .choice[data-o]').forEach(c => {
+    const printed = outs.includes(c.dataset.o), picked = c.classList.contains('sel'); c.classList.remove('sel');
+    if (printed && picked) c.classList.add('right'); else if (printed) { c.classList.add('missed'); c.insertAdjacentHTML('beforeend', '<span class="note">printed</span>'); }
+    else if (picked) c.classList.add('wrong');
+  });
+  const nc = $('#noneChoice'), ncPicked = nc.classList.contains('sel'); nc.classList.remove('sel');
+  if (!outs.length) nc.classList.add(ncPicked ? 'right' : 'missed'); else if (ncPicked) nc.classList.add('wrong');
+  $('#wOut').insertAdjacentHTML('beforeend', `<div class="explain"><div class="hd">${esc(tpl.name)}</div><p>${tpl.lesson}</p></div>`);
+  if (ok) { W.right++; sfxGood(); } else sfxBad();
+  setFoot(ok ? 'good' : 'bad', { title: ok ? 'Correct' : 'Not quite', text: ok ? '' : `Python printed ${outs.length ? outs.map(o => `“${esc(o)}”`).join(', ') : 'nothing'}.`,
+    btn: 'Continue', onClick: nextTrace });
+}
+function nextTrace() {
+  W.i++;
+  if (W.i >= W.total) {
+    if (!(save.best.trace >= W.right)) { save.best.trace = W.right; persist(); }
+    return complete({ id: 'trace', again: startTrace, stats: [['correct', `${W.right}/${W.total}`]] });
+  }
+  loadTrace();
+}
+
+/* =====================================================================
+   LESSON 4: ORDERING THE CHAIN
+   ===================================================================== */
+// branches are listed in a CORRECT order; expected outputs come from that order
+const LADDERS = [
+  { name: 'Report card', story: 'Turn a test score into a letter grade.',
+    branches: [[C('score', '>=', 90), 'A'], [C('score', '>=', 80), 'B'], [C('score', '>=', 70), 'C']], els: 'F',
+    tests: [{ score: 95 }, { score: 85 }, { score: 75 }, { score: 50 }],
+    lesson: 'With <code>&gt;=</code>, the highest bar goes first. Otherwise <code>score &gt;= 70</code> catches the 95 before it ever reaches the A check.' },
+  { name: 'Thermostat', story: 'Describe the weather from the temperature in °C.',
+    branches: [[C('temp', '<', 0), 'Freezing'], [C('temp', '<', 15), 'Cold'], [C('temp', '<', 25), 'Nice']], els: 'Hot',
+    tests: [{ temp: -5 }, { temp: 10 }, { temp: 20 }, { temp: 30 }],
+    lesson: 'With <code>&lt;</code> the order flips: the lowest bar goes first.' },
+  { name: 'Health bar', story: 'Show the right warning for the player\'s HP.',
+    branches: [[C('hp', '==', 0), 'Game Over'], [C('hp', '<', 25), 'Danger!'], [C('hp', '<', 100), 'Hurt']], els: 'Full health',
+    tests: [{ hp: 0 }, { hp: 10 }, { hp: 60 }, { hp: 100 }],
+    lesson: '0 is also less than 25 and less than 100, so the exact <code>hp == 0</code> check has to come before the wider ones.' },
+  { name: 'Severed floor', story: 'The vault from Trial 3. Get the messages in the right order.',
+    branches: [[C2('username', '==', 'mark_s', 'and', 'password', '==', 'lumon'), 'Welcome to the severed floor.'], [C('username', '==', 'mark_s'), 'Incorrect password, Mark.']],
+    els: 'Unrecognized employee. Sounding alarm.',
+    tests: [{ username: 'mark_s', password: 'lumon' }, { username: 'mark_s', password: '1234' }, { username: 'helly_r', password: 'lumon' }],
+    lesson: 'Most specific first. <code>username == "mark_s"</code> is True for Mark with any password, so if it goes first, the right password never gets a welcome.' },
+  { name: 'Ticket booth', story: 'Pick the right ticket for each age.',
+    branches: [[C('age', '<', 13), 'Kids ticket'], [C('age', '>=', 65), 'Senior ticket'], [C('age', '>=', 18), 'Adult ticket']], els: 'Teen ticket',
+    tests: [{ age: 8 }, { age: 15 }, { age: 30 }, { age: 70 }],
+    lesson: 'Only one pair cares about order here: 70 is also <code>&gt;= 18</code>, so the senior check has to come before the adult check. The kids check can go anywhere.' },
+];
+const ladderRun = (lad, order, env) => {
+  for (const k of order) if (evalCond(lad.branches[k][0], env)) return { out: lad.branches[k][1], k };
+  return { out: lad.els, k: -1 };
+};
+
+let L = null;
+function ladderIntro() {
+  introScreen({ icon: ICON.ladder, kicker: 'Lesson 4', title: 'Ordering the Chain',
+    paras: ['Because a chain stops at the first True, the <b>order</b> of your <code>elif</code>s can change the answer.',
+      'Each chain below is scrambled. Move the branches until every input prints what it should.'],
+    onStart: startLadder });
+}
+function startLadder() { leave(); screen = 'ladder'; L = { i: 0, firstTry: 0 }; loadLadder(); }
+function loadLadder() {
+  const lad = LADDERS[L.i], ids = lad.branches.map((_, k) => k);
+  let order, n = 0;
+  do { order = shuffle(ids); n++; } while (n < 60 && lad.tests.every(t => ladderRun(lad, order, t).out === ladderRun(lad, ids, t).out));
+  L.order = order; L.tries = 0; L.results = null; L.moved = -1;
+  renderLadder(); window.scrollTo(0, 0);
+}
+function renderLadder() {
+  const lad = LADDERS[L.i], ids = lad.branches.map((_, k) => k), lock = !!L.results;
+  const rung = (k, pos) => {
+    const [c, out] = lad.branches[k];
+    return `<div class="rung${pos === L.moved ? ' moved' : ''}"><div class="grip">${ICON.grip}</div>
+      ${codeBlock([`${pos === 0 ? 'if' : 'elif'} ${condText(c)}:`, `    print("${out}")`], { id: `lr${pos}_`, start: pos * 2 + 1 })}
+      <div class="moves"><button onclick="moveRung(${pos},-1)" aria-label="Move up" ${pos === 0 || lock ? 'disabled' : ''}>${ICON.up}</button>
+        <button onclick="moveRung(${pos},1)" aria-label="Move down" ${pos === L.order.length - 1 || lock ? 'disabled' : ''}>${ICON.down}</button></div></div>`;
+  };
+  app.innerHTML = topbar(L.i / LADDERS.length * 100, `${L.i + 1} / ${LADDERS.length}`) + `<div class="stage">
+    <div class="kicker">${esc(lad.name)}</div>
+    <div class="prompt">${lad.story} Reorder the branches so every input prints the right thing.</div>
+    ${L.order.map((k, pos) => rung(k, pos)).join('')}
+    <div class="rung fixed"><div class="grip">${ICON.grip}</div>${codeBlock(['else:', `    print("${lad.els}")`], { id: 'lre', start: L.order.length * 2 + 1 })}</div>
+    <div class="muted" style="font-size:14px;margin:-2px 0 18px">The top branch is always <code>if</code>. The rest become <code>elif</code>. <code>else</code> stays last.</div>
+    <div class="tablewrap"><table class="t"><tr><th>Input</th><th>Should print</th><th>Your chain prints</th></tr>
+      ${lad.tests.map((t, i) => {
+        const want = ladderRun(lad, ids, t).out, r = L.results && L.results[i];
+        return `<tr><td class="mono">${envCell(t)}</td><td>${esc(want)}</td><td>${r ? `<span class="${r.ok ? 'ok' : 'no'}">${esc(r.out)}</span>` : '<span class="pending">?</span>'}</td></tr>`;
+      }).join('')}
+    </table></div>
+    <div id="lExplain"></div></div>`;
+  if (!lock) setFoot('idle', { btn: 'Check', onClick: checkLadder });
+}
+function moveRung(pos, d) {
+  if (L.results) return;
+  const j = pos + d; if (j < 0 || j >= L.order.length) return;
+  [L.order[pos], L.order[j]] = [L.order[j], L.order[pos]]; L.moved = j; sfxTick(); renderLadder();
+}
+function checkLadder() {
+  const lad = LADDERS[L.i], ids = lad.branches.map((_, k) => k);
+  L.results = lad.tests.map(t => { const r = ladderRun(lad, L.order, t), want = ladderRun(lad, ids, t).out; return { ...r, want, ok: r.out === want, t }; });
+  const bad = L.results.find(r => !r.ok);
+  L.moved = -1; renderLadder();
+  if (!bad) {
+    if (L.tries === 0) L.firstTry++;
+    sfxGood();
+    $('#lExplain').innerHTML = `<div class="explain"><div class="hd">Why this order</div><p>${lad.lesson}</p></div>`;
+    setFoot('good', { title: 'Correct', text: 'Every input lands on the right line.', btn: 'Continue', onClick: nextLadder });
+  } else {
+    L.tries++; sfxBad();
+    const pos = L.order.indexOf(bad.k);
+    const why = bad.k >= 0
+      ? `For ${cd(envText(bad.t))}, the first True line is ${cd(`${pos === 0 ? 'if' : 'elif'} ${condText(lad.branches[bad.k][0])}:`)}, so it prints “${esc(bad.out)}” and stops.`
+      : `For ${cd(envText(bad.t))}, no branch is True, so it falls through to else.`;
+    setFoot('bad', { title: 'Not quite', text: why, btn: 'Try again', onClick: () => { L.results = null; renderLadder(); } });
+  }
+}
+function nextLadder() {
+  L.i++;
+  if (L.i >= LADDERS.length) {
+    if (!(save.best.ladder >= L.firstTry)) { save.best.ladder = L.firstTry; persist(); }
+    return complete({ id: 'ladder', again: startLadder, stats: [['chains', LADDERS.length], ['right first time', `${L.firstTry}/${LADDERS.length}`]] });
+  }
+  loadLadder();
+}
+
+/* =====================================================================
+   KEYBOARD + BOOT
+   ===================================================================== */
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if ((screen === 'truth' || screen === 'speed') && !e.ctrlKey && !e.metaKey) {
+    const map = { t: 'True', 1: 'True', f: 'False', 2: 'False', e: 'Error', 3: 'Error' };
+    if (map[k]) { screen === 'truth' ? pickTruth(map[k]) : answerSpeed(map[k]); return; }
+  }
+  if (k === 'enter') { const b = $('#footBtn'); if (b && !b.disabled) { e.preventDefault(); b.click(); } }
+});
+course();
+</script>
+</body>
+</html>
